@@ -1,0 +1,43 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Montserrat", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Playfair Display", serif;
+  
+  --color-gold: #0D9488;
+  --color-blush: #F0FDFA;
+  --color-accent-gold: #0F766E;
+}
+
+@layer base {
+  body {
+    @apply font-sans text-gray-800 bg-[#fefefe];
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-display text-gray-900;
+  }
+
+  /* Enhancing professional text colors */
+  h1 { @apply text-gray-900; }
+  h2 { @apply text-gray-800 tracking-tight; }
+  p { @apply text-gray-600 leading-relaxed; }
+}
+
+@layer utilities {
+  .text-luxury {
+    @apply bg-linear-to-r from-gold via-accent-gold to-gold bg-clip-text text-transparent italic;
+  }
+  
+  .luxury-shadow {
+    box-shadow: 0 10px 30px -10px rgba(13, 148, 136, 0.25);
+  }
+  .hover-luxury {
+    @apply transition-all duration-300;
+  }
+  .hover-luxury:hover {
+    @apply scale-[1.02];
+    box-shadow: 0 10px 30px -10px rgba(13, 148, 136, 0.2);
+  }
+}
