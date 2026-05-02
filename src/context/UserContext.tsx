@@ -242,7 +242,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     // 2. Fetch the latest profile from DB to get the most recent 'role'
     const { data: profile } = await supabase
-      .from('customers')
+      .from('profiles')
       .select('*')
       .eq('email', email)
       .single();
@@ -259,7 +259,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
         fullName: profile.full_name,
         phone: profile.phone,
         role: profile.role || 'user',
-        avatar: profile.avatar,
+        avatar: profile.avatar_url,
         bio: profile.bio,
         createdAt: profile.created_at
       };

@@ -13,6 +13,7 @@ export const supabaseService = {
   },
   async upsertProduct(product: Product) {
     try {
+      // Prepare clean data for DB matching your schema
       const dbProduct: any = {
         id: product.id,
         name: product.name,
@@ -22,9 +23,9 @@ export const supabaseService = {
         stock: Number(product.stock),
         status: product.status || 'Published',
         category: product.category || 'Bangles',
-        featured: !!(product.isFeatured || product.featured),
-        is_featured: !!(product.isFeatured || product.featured),
-        "createdAt": product.createdAt || new Date().toISOString()
+        isFeatured: !!(product.isFeatured || product.featured),
+        artisanStory: product.artisanStory || '',
+        createdAt: product.createdAt || new Date().toISOString()
       };
 
       const { data, error } = await supabase.from('products').upsert(dbProduct).select();
@@ -46,30 +47,33 @@ export const supabaseService = {
 
   // Orders
   async getOrders() {
-    const { data, error } = await supabase.from('orders').select('*').order('createdAt', { ascending: false });
+    const { data, error } = await supabase.from('orders').select('*').order('created_at', { ascending: false });
     if (error) throw error;
-    return data as Order[];
+    return (data || []).map(o => ({
+      id: o.id,
+      userId: o.user_id,
+      items: o.items,
+      total: o.total,
+      status: o.status,
+      customer: o.customer_details,
+      deliveryFee: o.delivery_fee,
+      createdAt: o.created_at
+    })) as Order[];
   },
-  async upsertOrder(order: Order, retryCount = 0) {
+  async upsertOrder(order: Order) {
     try {
-      // 1. Prepare clean data for DB
+      // 1. Prepare data for DB (matching underscore_case schema)
       const dbOrder: any = {
         id: order.id,
-        "userId": order.userId,
+        user_id: order.userId,
         items: Array.isArray(order.items) ? order.items : [],
         total: Number(order.total) || 0,
-        status: order.status,
-        customer: order.customer,
-        "deliveryFee": Number(order.deliveryFee) || 0,
-        "deliveryDate": order.deliveryDate,
-        "createdAt": order.createdAt || new Date().toISOString()
+        status: order.status || 'Pending',
+        customer_details: order.customer,
+        delivery_fee: Number(order.deliveryFee) || 0,
+        created_at: order.createdAt || new Date().toISOString()
       };
 
-      // Handle optional fields
-      if (retryCount === 0) {
-        dbOrder.phone = order.phone || order.customer?.phone || '';
-      }
-      
       // 2. Upsert the main order
       const { data, error } = await supabase
         .from('orders')
@@ -78,32 +82,18 @@ export const supabaseService = {
       
       if (error) {
         console.error('Supabase Order Upsert Error:', error);
-        
-        // Retry logic for missing 'phone' column
-        if (retryCount === 0 && (error.message?.includes('column "phone"') || error.code === '42703')) {
-           console.log('Retrying without phone column...');
-           return this.upsertOrder(order, 1);
-        }
         throw error;
       }
 
-      // 3. Sync individual items for analytics
-      if (order.items && order.items.length > 0) {
-        try {
-          const orderItems = order.items.map(item => ({
-            order_id: order.id,
-            product_id: item.id,
-            product_name: item.name,
-            quantity: Number(item.quantity) || 1,
-            price: Number(item.price) || 0
-          }));
-
-          // Clean up old items first to avoid duplicates on update
-          await supabase.from('order_items').delete().eq('order_id', order.id);
-          await supabase.from('order_items').insert(orderItems);
-        } catch (itemsErr) {
-          console.warn('Order items sync ignored:', itemsErr);
-        }
+      // 3. Track in Order History
+      try {
+        await supabase.from('order_history').insert({
+          order_id: order.id,
+          status: order.status || 'Pending',
+          notes: 'Order placed via website checkout'
+        });
+      } catch (historyErr) {
+        console.warn('Order history entry failed:', historyErr);
       }
 
       return (data && data[0]) ? data[0] : order;
@@ -113,24 +103,17 @@ export const supabaseService = {
     }
   },
 
-  // Customers / Users
+  // Profiles (linked to auth.users)
   async getCustomers() {
-    const { data, error } = await supabase.from('customers').select('*').order('created_at', { ascending: false });
+    const { data, error } = await supabase.from('profiles').select('*').order('created_at', { ascending: false });
     if (error) throw error;
-    return (data || []).map(profile => ({
-      id: profile.id,
-      email: profile.email,
-      fullName: profile.full_name,
-      phone: profile.phone,
-      role: profile.role || 'user',
-      avatar: profile.avatar,
-      bio: profile.bio,
-      address: profile.address,
-      city: profile.city,
-      location: profile.location,
-      createdAt: profile.created_at,
-      isBlocked: profile.is_blocked,
-      password: profile.password
+    return (data || []).map(p => ({
+      id: p.id,
+      email: p.email,
+      fullName: p.full_name,
+      role: p.role || 'user',
+      avatar: p.avatar_url,
+      createdAt: p.created_at
     })) as Customer[];
   },
   async upsertCustomer(customer: Customer) {
@@ -138,20 +121,23 @@ export const supabaseService = {
       id: customer.id,
       full_name: customer.fullName,
       email: customer.email,
-      phone: customer.phone,
-      password: customer.password,
       role: customer.role,
-      address: customer.address,
-      city: customer.city,
-      location: customer.location,
-      avatar: customer.avatar,
-      bio: customer.bio,
-      created_at: customer.createdAt,
-      is_blocked: customer.isBlocked
+      avatar_url: customer.avatar,
+      created_at: customer.createdAt || new Date().toISOString()
     };
-    const { data, error } = await supabase.from('customers').upsert(dbCustomer).select().single();
+    const { data, error } = await supabase.from('profiles').upsert(dbCustomer).select().single();
     if (error) throw error;
     return data as Customer;
+  },
+  async updateProfile(id: string, updates: any) {
+    const dbUpdates: any = {};
+    if (updates.fullName) dbUpdates.full_name = updates.fullName;
+    if (updates.avatar) dbUpdates.avatar_url = updates.avatar;
+    if (updates.role) dbUpdates.role = updates.role;
+    
+    const { data, error } = await supabase.from('profiles').update(dbUpdates).eq('id', id).select().single();
+    if (error) throw error;
+    return data;
   },
 
   // Support Messages
@@ -192,12 +178,23 @@ export const supabaseService = {
 
   // Admin Login History
   async getLoginHistory() {
-    const { data, error } = await supabase.from('admin_login_history').select('*').order('time', { ascending: false });
+    const { data, error } = await supabase.from('admin_login_history').select('*').order('logged_at', { ascending: false });
     if (error) throw error;
-    return data as AdminLoginHistory[];
+    return (data || []).map(h => ({
+      id: h.id,
+      email: h.admin_email,
+      time: h.logged_at,
+      status: 'Success' // Simplified for now
+    })) as AdminLoginHistory[];
   },
   async addLoginHistory(history: AdminLoginHistory) {
-    const { data, error } = await supabase.from('admin_login_history').insert(history).select().single();
+    const dbHistory = {
+      admin_email: history.email,
+      logged_at: history.time || new Date().toISOString(),
+      user_agent: window.navigator.userAgent,
+      // ip_address would require a server-side route or external API, so we skip or set placeholder
+    };
+    const { data, error } = await supabase.from('admin_login_history').insert(dbHistory).select().single();
     if (error) throw error;
     return data as AdminLoginHistory;
   }

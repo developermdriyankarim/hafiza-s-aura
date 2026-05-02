@@ -44,7 +44,15 @@ const Checkout: React.FC = () => {
     
     setIsSubmitting(true);
     try {
-      const orderId = `ORDER-${Date.now()}`;
+      // Use crypto.randomUUID() or fallback to a UUID-like string
+      // Supabase expects a valid UUID format for the UUID column
+      const orderId = window.crypto?.randomUUID ? window.crypto.randomUUID() : 
+                     'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+                       const r = Math.random() * 16 | 0;
+                       const v = c === 'x' ? r : (r & 0x3 | 0x8);
+                       return v.toString(16);
+                     });
+
       const newOrder: Order = {
         id: orderId,
         userId: currentUser?.id,
