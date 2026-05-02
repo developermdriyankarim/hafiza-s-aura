@@ -4,11 +4,30 @@ import { Product, Order, Customer, SupportMessage, Craftsman, ReceiveLog, AdminL
 export const supabaseService = {
   // Products
   async getProducts() {
-    const { data, error } = await supabase.from('products').select('*').order('id', { ascending: false });
-    if (error) throw error;
+    const { data, error } = await supabase
+      .from('products')
+      .select('*')
+      .order('createdAt', { ascending: false });
+    
+    if (error) {
+      console.error('Error fetching products:', error);
+      throw error;
+    }
+
+    console.log('Raw products from Supabase:', data);
+
     return (data || []).map(p => ({
-      ...p,
-      isFeatured: p.is_featured
+      id: p.id,
+      name: p.name,
+      price: Number(p.price) || 0,
+      description: p.description || '',
+      image: p.image || 'https://images.unsplash.com/photo-1611085583191-a3b1787255fe?q=80&w=1000',
+      category: p.category || 'Jewelry',
+      stock: Number(p.stock) || 0,
+      isFeatured: p.isFeatured || false,
+      status: p.status || 'Published',
+      artisanStory: p.artisanStory || '',
+      createdAt: p.createdAt
     })) as Product[];
   },
   async upsertProduct(product: Product) {

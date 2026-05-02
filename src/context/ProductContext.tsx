@@ -29,19 +29,8 @@ export const ProductProvider: React.FC<{ children: ReactNode }> = ({ children })
     try {
       const dbData = await supabaseService.getProducts();
       if (dbData && Array.isArray(dbData)) {
-        setProducts(prev => {
-          // Merge logic: Keep local products that aren't in DB yet, 
-          // and update existing with DB data.
-          const dbIds = new Set(dbData.map(p => p.id));
-          const localOnly = prev.filter(p => !dbIds.has(p.id));
-          
-          // Only update if we actually got something new or different
-          if (dbData.length === 0 && localOnly.length === prev.length) {
-            return prev;
-          }
-          
-          return [...localOnly, ...dbData];
-        });
+        console.log(`Fetched ${dbData.length} products from Supabase`);
+        setProducts(dbData); // Overwrite local with DB for a clean sync
       }
     } catch (e) {
       console.error('Supabase products sync failed:', e);
