@@ -7,7 +7,7 @@ export const supabaseService = {
     const { data, error } = await supabase
       .from('products')
       .select('*')
-      .order('createdAt', { ascending: false });
+      .order('created_at', { ascending: false });
     
     if (error) {
       console.error('Error fetching products:', error);
@@ -23,10 +23,10 @@ export const supabaseService = {
       image: p.image || 'https://images.unsplash.com/photo-1611085583191-a3b1787255fe?q=80&w=1000',
       category: p.category || 'Jewelry',
       stock: Number(p.stock) || 0,
-      isFeatured: Boolean(p.isFeatured),
+      isFeatured: Boolean(p.is_featured),
       status: p.status || 'Published',
-      artisanStory: p.artisanStory || '',
-      createdAt: p.createdAt
+      artisanStory: p.artisan_story || '',
+      createdAt: p.created_at
     })) as Product[];
   },
   async upsertProduct(product: Product) {
@@ -41,9 +41,9 @@ export const supabaseService = {
         stock: Number(product.stock),
         status: product.status || 'Published',
         category: product.category || 'Bangles',
-        isFeatured: !!(product.isFeatured || product.featured),
-        artisanStory: product.artisanStory || '',
-        createdAt: product.createdAt || new Date().toISOString()
+        is_featured: !!(product.isFeatured),
+        artisan_story: product.artisanStory || '',
+        created_at: product.createdAt || new Date().toISOString()
       };
 
       const { data, error } = await supabase.from('products').upsert(dbProduct).select();
@@ -160,12 +160,23 @@ export const supabaseService = {
 
   // Support Messages
   async getSupportMessages() {
-    const { data, error } = await supabase.from('support_messages').select('*').order('createdAt', { ascending: false });
+    const { data, error } = await supabase.from('support_messages').select('*').order('created_at', { ascending: false });
     if (error) throw error;
-    return data as SupportMessage[];
+    return (data || []).map(m => ({
+      ...m,
+      createdAt: m.created_at
+    })) as SupportMessage[];
   },
   async addSupportMessage(message: SupportMessage) {
-    const { data, error } = await supabase.from('support_messages').insert(message).select().single();
+    const dbMessage = {
+      name: message.name,
+      email: message.email,
+      subject: message.subject,
+      message: message.message,
+      status: message.status || 'New',
+      created_at: message.createdAt || new Date().toISOString()
+    };
+    const { data, error } = await supabase.from('support_messages').insert(dbMessage).select().single();
     if (error) throw error;
     return data as SupportMessage;
   },

@@ -47,6 +47,23 @@ export const ProductProvider: React.FC<{ children: ReactNode }> = ({ children })
 
   useEffect(() => {
     syncWithSupabase();
+
+    // REAL-TIME SUBSCRIPTION
+    const channel = supabase
+      .channel('products-realtime')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'products' },
+        () => {
+          console.log('🔔 Realtime update received for products');
+          syncWithSupabase();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   // Use a separate effect to refresh when the window gains focus (optional but helpful)
