@@ -11,8 +11,13 @@
 }
 
 @layer base {
+  html, body {
+    @apply overflow-x-hidden w-full max-w-full relative;
+    -webkit-tap-highlight-color: transparent;
+  }
+  
   body {
-    @apply font-sans text-gray-800 bg-[#fefefe];
+    @apply font-sans text-gray-800 bg-[#fefefe] break-words overflow-x-hidden;
   }
   
   h1, h2, h3, h4, h5, h6 {

@@ -7,8 +7,14 @@ import { useNavigate } from 'react-router-dom';
 
 const Profile: React.FC = () => {
   const { currentUser, updateCustomer, logoutUser } = useUsers();
-  const { orders, updateOrderStatus } = useOrders();
+  const { orders, updateOrderStatus, syncWithSupabase } = useOrders();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (syncWithSupabase) {
+      syncWithSupabase();
+    }
+  }, []);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [isEditing, setIsEditing] = useState(false);
@@ -87,18 +93,11 @@ const Profile: React.FC = () => {
     const steps = [
       { id: 'Pending', label: 'Artisan Received', desc: 'Selection is being reviewed by our master artisans.' },
       { id: 'Approved', label: 'Aura Verified', desc: 'Authenticity and quality check completed.' },
-      { id: 'Shipped', label: 'In Transit', desc: 'Your treasure has left the royal vaults.' },
+      { id: 'In Transit', alternateId: 'Shipped', label: 'In Transit', desc: 'Your treasure has left the royal vaults.' },
       { id: 'Delivered', label: 'Grand Arrival', desc: 'The aura has reached its destination.' }
     ];
 
-    const detailedShippedSteps = [
-      { label: 'Package received by courier', time: '2 days ago' },
-      { label: 'Processed at hub', time: '1 day ago' },
-      { label: 'In transit to city', time: '12 hours ago' },
-      { label: 'Out for delivery', time: 'Just now' }
-    ];
-
-    const currentIdx = steps.findIndex(s => s.id === status);
+    const currentIdx = steps.findIndex(s => s.id === status || (s.alternateId && s.alternateId === status));
     
     return (
       <div className="space-y-8 mt-6">
@@ -121,15 +120,25 @@ const Profile: React.FC = () => {
               </div>
             </div>
 
-            {/* Detailed tracking for Shipped status */}
-            {status === 'Shipped' && step.id === 'Shipped' && (
+            {/* Detailed tracking for In Transit status */}
+            {(status === 'Shipped' || status === 'In Transit') && (step.id === 'Shipped' || step.id === 'In Transit') && (
               <div className="ml-12 pl-4 border-l border-gold/20 space-y-4 py-2">
-                {detailedShippedSteps.map((dStep, dIdx) => (
-                  <div key={dIdx} className="flex items-center justify-between text-[10px]">
-                    <span className="text-gray-600 font-medium">• {dStep.label}</span>
-                    <span className="text-gray-400">{dStep.time}</span>
-                  </div>
-                ))}
+                <div className="flex items-center justify-between text-[10px]">
+                  <span className="text-gray-600 font-medium">• Package received by courier</span>
+                  <span className="text-gray-400">1 day ago</span>
+                </div>
+                <div className="flex items-center justify-between text-[10px]">
+                  <span className="text-gray-600 font-medium">• Processed at hub</span>
+                  <span className="text-gray-400">12 hours ago</span>
+                </div>
+                <div className="flex items-center justify-between text-[10px]">
+                  <span className="text-gray-600 font-medium">• In transit to city</span>
+                  <span className="text-gray-400">6 hours ago</span>
+                </div>
+                <div className="flex items-center justify-between text-[10px]">
+                  <span className="text-gray-600 font-medium">• Out for delivery</span>
+                  <span className="text-gray-400">Just now</span>
+                </div>
               </div>
             )}
           </div>
@@ -366,7 +375,7 @@ const Profile: React.FC = () => {
                             <div className="flex flex-col items-end">
                               <p className="text-[10px] text-gray-400 uppercase tracking-widest font-black">Aura Commitment</p>
                               <p className="text-sm font-bold text-gold">
-                                {activeOrder.deliveryDate ? new Date(activeOrder.deliveryDate).toLocaleDateString() : '4-7 Working Days'}
+                                {activeOrder.deliveryDate ? new Date(activeOrder.deliveryDate).toLocaleDateString() : '2-4 Working Days'}
                               </p>
                             </div>
                           </div>

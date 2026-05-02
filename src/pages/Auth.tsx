@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Mail, Lock, User, ArrowRight, ShieldCheck, Heart, Phone } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useUsers } from '../context/UserContext';
 import { useSupport } from '../context/SupportContext';
 
@@ -10,6 +10,8 @@ const Auth: React.FC = () => {
   const { registerCustomer, loginUser } = useUsers();
   const { addMessage } = useSupport();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const redirectTo = searchParams.get('redirect') || '/shop';
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -66,8 +68,7 @@ const Auth: React.FC = () => {
             password: formData.password,
             createdAt: new Date().toISOString()
           });
-          alert('Welcome to Hafiza\'s Aura! Your account has been registered.');
-          navigate('/shop');
+          navigate(redirectTo);
         } catch (err: any) {
           setError(err.message === 'User with this email already exists' 
             ? 'An account with this email already exists. Please try logging in.' 
@@ -79,7 +80,7 @@ const Auth: React.FC = () => {
       const performLogin = async () => {
         try {
           await loginUser(formData.email, formData.password);
-          navigate('/shop');
+          navigate(redirectTo);
         } catch (err: any) {
           setError(err.message || 'Invalid credentials or account does not exist.');
         }

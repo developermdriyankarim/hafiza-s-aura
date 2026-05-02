@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { ShoppingCart, User, Menu, X, Search, LogOut, ArrowRight } from 'lucide-react';
+import { ShoppingCart, User, Menu, X, Search, LogOut, ArrowRight, ShoppingBag } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { useUsers } from '../context/UserContext';
 import { useProducts } from '../context/ProductContext';
@@ -131,7 +131,7 @@ const Navbar: React.FC = () => {
                              <Search className="w-5 h-5 text-gray-200" />
                           </div>
                           <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">NOT FOUND</p>
-                          <p className="text-xs text-gray-500 mt-2 italic max-w-[200px] mx-auto">"{{searchQuery}}" does not appear in our heritage collection.</p>
+                          <p className="text-xs text-gray-500 mt-2 italic max-w-[200px] mx-auto">"{searchQuery}" does not appear in our heritage collection.</p>
                         </div>
                       )}
                     </motion.div>
@@ -143,6 +143,15 @@ const Navbar: React.FC = () => {
 
           {/* Icons */}
           <div className="flex items-center space-x-5">
+            <Link 
+              to="/shop" 
+              className="text-gray-600 hover:text-gold transition-colors relative group"
+            >
+              <ShoppingBag className="w-5 h-5" />
+              <div className="absolute top-full right-0 mt-4 bg-white border border-gray-100 rounded-xl p-3 shadow-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none w-32 text-left">
+                <p className="text-[10px] text-gray-400 uppercase tracking-widest font-black">All Collections</p>
+              </div>
+            </Link>
             <button 
               onClick={() => setIsSearchOpen(true)}
               className="text-gray-600 hover:text-gold transition-colors"

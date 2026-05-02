@@ -22,7 +22,8 @@ const Shop: React.FC = () => {
   }, [location.search]);
 
   const filteredProducts = useMemo(() => {
-    let result = products.filter(p => p.status !== 'Draft');
+    if (!products) return [];
+    let result = products.filter(p => p && p.status !== 'Draft');
 
     // Search
     if (searchQuery) {
@@ -114,7 +115,7 @@ const Shop: React.FC = () => {
                 <Search className="w-8 h-8 text-gray-200" />
              </div>
              <h3 className="text-3xl font-display text-gray-900 tracking-tight">NOT FOUND</h3>
-             <p className="text-gray-400 text-sm mt-2 max-w-xs mx-auto italic">"{{searchQuery}}" does not appear in our treasures search...</p>
+             <p className="text-gray-400 text-sm mt-2 max-w-xs mx-auto italic">"{searchQuery}" does not appear in our treasures search...</p>
              <button 
                 onClick={() => {setSearchQuery('');}}
                 className="mt-8 text-[10px] font-black uppercase tracking-[0.3em] text-gold border-b border-gold/30 hover:border-gold pb-1 transition-all"

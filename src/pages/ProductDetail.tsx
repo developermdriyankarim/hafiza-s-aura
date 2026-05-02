@@ -14,24 +14,41 @@ const ProductDetail: React.FC = () => {
   const { addToCart } = useCart();
   const { currentUser } = useUsers();
   const [quantity, setQuantity] = useState(1);
+  const [selectedSize, setSelectedSize] = useState<string>('24');
   const [activeTab, setActiveTab] = useState('details');
 
   const product = products.find(p => p.id === id);
 
-  if (!product) return <div>Product Not Found</div>;
+  const relatedProducts = React.useMemo(() => {
+    if (!product) return [];
+    return products
+      .filter(p => p.id !== product.id)
+      .sort(() => 0.5 - Math.random())
+      .slice(0, 6);
+  }, [products, product?.id]);
 
-  const relatedProducts = products.filter(p => p.id !== product.id).slice(0, 3);
+  if (!product) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-gray-400 font-display italic">Seeking treasure in Aura vaults...</p>
+          <button onClick={() => navigate('/shop')} className="mt-4 text-gold underline font-bold uppercase tracking-widest text-[10px]">Back to Shop</button>
+        </div>
+      </div>
+    );
+  }
+
+  const defaultSizes = ['20', '21', '22', '23', '24', '25', '26', '27', '28', '29', '30'];
+  const availableSizes = product.sizes && product.sizes.length > 0 ? product.sizes : defaultSizes;
 
   const handleAddToCart = () => {
     if (!currentUser) {
-      alert('Your presence is requested! Please log in to select your heritage treasures.');
-      navigate('/login');
+      navigate('/login?redirect=' + encodeURIComponent(window.location.pathname));
       return;
     }
     for (let i = 0; i < quantity; i++) {
-       addToCart(product);
+       addToCart(product, selectedSize);
     }
-    // Optional: show a success toast here
   };
 
   return (
@@ -101,6 +118,29 @@ const ProductDetail: React.FC = () => {
             </p>
 
             <div className="space-y-8">
+              {/* Size Selector */}
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <span className="text-[10px] uppercase tracking-widest font-bold text-gray-400">Select Size (cm)</span>
+                  <button className="text-[10px] uppercase tracking-widest font-bold text-gold hover:underline">Size Guide</button>
+                </div>
+                <div className="grid grid-cols-5 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-6 xl:grid-cols-8 gap-2">
+                  {availableSizes.map((size) => (
+                    <button
+                      key={size}
+                      onClick={() => setSelectedSize(size)}
+                      className={`h-10 border text-xs font-bold transition-all rounded-sm ${
+                        selectedSize === size 
+                        ? 'border-gold bg-gold text-white' 
+                        : 'border-gray-100 hover:border-gold/50 text-gray-500'
+                      }`}
+                    >
+                      {size}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               {/* Quantity Selector */}
               <div className="flex items-center space-x-6">
                 <span className="text-[10px] uppercase tracking-widest font-bold text-gray-400">Quantity</span>
@@ -174,11 +214,11 @@ const ProductDetail: React.FC = () => {
 
         {/* Related Products */}
         {relatedProducts.length > 0 && (
-          <div className="mt-40">
-            <h3 className="text-2xl font-display font-medium text-center mb-16 underline underline-offset-8 decoration-gold/30">You Might Also Adore</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-12">
+          <div className="mt-24 md:mt-40">
+            <h3 className="text-2xl md:text-3xl font-display font-medium text-center mb-10 md:mb-16 underline underline-offset-8 decoration-gold/30">You Might Also Adore</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 md:gap-12 hover-cards-animate">
                {relatedProducts.map(p => (
-                 <ProductCard key={p.id} product={p} />
+                 <ProductCard key={p.id} product={{...p, isFeatured: false}} />
                ))}
             </div>
           </div>

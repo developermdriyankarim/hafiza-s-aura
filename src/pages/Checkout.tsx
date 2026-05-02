@@ -27,15 +27,10 @@ const Checkout: React.FC = () => {
   useEffect(() => {
     if (!currentUser) {
       navigate('/login');
-    } else {
-      setFormData(prev => ({
-        ...prev,
-        name: currentUser.fullName || '',
-        email: currentUser.email || '',
-        phone: currentUser.phone || ''
-      }));
+    } else if (cart.length === 0) {
+      navigate('/shop');
     }
-  }, [currentUser, navigate]);
+  }, [currentUser, cart.length, navigate]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -49,9 +44,11 @@ const Checkout: React.FC = () => {
     
     setIsSubmitting(true);
     try {
+      const orderId = `ORDER-${Date.now()}`;
       const newOrder: Order = {
-        id: `ORDER-${Date.now()}`,
+        id: orderId,
         userId: currentUser?.id,
+        phone: formData.phone,
         customer: {
           fullName: formData.name,
           email: formData.email,
@@ -67,23 +64,26 @@ const Checkout: React.FC = () => {
         createdAt: new Date().toISOString()
       };
 
-      await addOrder(newOrder);
+      try {
+        await addOrder(newOrder);
+      } catch (syncErr) {
+        console.warn('Sync failed, using local order:', syncErr);
+      }
       
-      // Clear cart AFTER order is successfully added (at least to local state)
+      // Clear cart AFTER order is successfully added
       clearCart();
       
-      // Brief delay to ensure state updates or just navigate
-      navigate('/dashboard');
+      // Redirect to order success page
+      navigate('/order-success', { state: { orderId } });
     } catch (err) {
       console.error('Order Submission Error:', err);
-      alert('Failed to place order. Please try again.');
+      alert('Failed to place order. Please check your data and try again.');
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  if (cart.length === 0) {
-    navigate('/shop');
+  if (cart.length === 0 || !currentUser) {
     return null;
   }
 
@@ -221,13 +221,18 @@ const Checkout: React.FC = () => {
                 <h2 className="text-lg font-display mb-6">Your Heritage Summary</h2>
                 <div className="space-y-4 mb-8 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
                    {cart.map(item => (
-                     <div key={item.id} className="flex items-center space-x-4 pb-4 border-b border-gray-50">
+                     <div key={`${item.id}-${item.size}`} className="flex items-center space-x-4 pb-4 border-b border-gray-50">
                         <div className="w-16 h-16 rounded bg-gray-50 overflow-hidden flex-shrink-0">
                            <img src={item.image} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                         </div>
                         <div className="flex-grow">
                            <h4 className="text-sm font-semibold text-gray-900 line-clamp-1">{item.name}</h4>
-                           <p className="text-[10px] text-gray-400 font-bold mt-1 uppercase tracking-widest">Qty: {item.quantity}</p>
+                           <div className="flex items-center gap-3 mt-1">
+                              <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Qty: {item.quantity}</p>
+                              {item.size && (
+                                <span className="text-[10px] bg-gray-50 text-gold px-2 py-0.5 rounded font-black uppercase tracking-widest">Size: {item.size}</span>
+                              )}
+                           </div>
                         </div>
                         <span className="text-sm font-bold">৳{( (Number(item.price) || 0) * (Number(item.quantity) || 0) ).toLocaleString()}</span>
                      </div>

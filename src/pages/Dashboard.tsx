@@ -1,7 +1,9 @@
 import React from 'react';
 import { User, Package, Clock, LogOut, Settings, CreditCard, ChevronRight } from 'lucide-react';
 import { motion } from 'motion/react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { useUsers } from '../context/UserContext';
+import { useOrders } from '../context/OrderContext';
 
 const Dashboard: React.FC = () => {
   const { currentUser, logoutUser } = useUsers();

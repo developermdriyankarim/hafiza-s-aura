@@ -16,27 +16,26 @@ export const supabaseService = {
       const dbProduct: any = {
         id: product.id,
         name: product.name,
-        price: product.price,
+        price: Number(product.price),
         description: product.description,
         image: product.image,
-        stock: product.stock,
+        stock: Number(product.stock),
         status: product.status || 'Published',
+        category: product.category || 'Bangles',
+        featured: !!(product.isFeatured || product.featured),
+        is_featured: !!(product.isFeatured || product.featured),
+        "createdAt": product.createdAt || new Date().toISOString()
       };
-      
-      // Only add is_featured if it exists or we want to try both naming conventions
-      if (product.isFeatured !== undefined) {
-        dbProduct.is_featured = product.isFeatured;
-      }
 
       const { data, error } = await supabase.from('products').upsert(dbProduct).select();
       
       if (error) {
-        console.error('Supabase Upsert Error Detail:', error);
+        console.error('Supabase Product Upsert Error:', error);
         throw error;
       }
       return data?.[0] as Product;
     } catch (err) {
-      console.error('Failed to upsert product:', err);
+      console.error('Failed in upsertProduct:', err);
       throw err;
     }
   },
@@ -51,10 +50,67 @@ export const supabaseService = {
     if (error) throw error;
     return data as Order[];
   },
-  async upsertOrder(order: Order) {
-    const { data, error } = await supabase.from('orders').upsert(order).select().single();
-    if (error) throw error;
-    return data as Order;
+  async upsertOrder(order: Order, retryCount = 0) {
+    try {
+      // 1. Prepare clean data for DB
+      const dbOrder: any = {
+        id: order.id,
+        "userId": order.userId,
+        items: Array.isArray(order.items) ? order.items : [],
+        total: Number(order.total) || 0,
+        status: order.status,
+        customer: order.customer,
+        "deliveryFee": Number(order.deliveryFee) || 0,
+        "deliveryDate": order.deliveryDate,
+        "createdAt": order.createdAt || new Date().toISOString()
+      };
+
+      // Handle optional fields
+      if (retryCount === 0) {
+        dbOrder.phone = order.phone || order.customer?.phone || '';
+      }
+      
+      // 2. Upsert the main order
+      const { data, error } = await supabase
+        .from('orders')
+        .upsert(dbOrder)
+        .select();
+      
+      if (error) {
+        console.error('Supabase Order Upsert Error:', error);
+        
+        // Retry logic for missing 'phone' column
+        if (retryCount === 0 && (error.message?.includes('column "phone"') || error.code === '42703')) {
+           console.log('Retrying without phone column...');
+           return this.upsertOrder(order, 1);
+        }
+        throw error;
+      }
+
+      // 3. Sync individual items for analytics
+      if (order.items && order.items.length > 0) {
+        try {
+          const orderItems = order.items.map(item => ({
+            order_id: order.id,
+            product_id: item.id,
+            product_name: item.name,
+            quantity: Number(item.quantity) || 1,
+            price: Number(item.price) || 0
+          }));
+
+          // Clean up old items first to avoid duplicates on update
+          await supabase.from('order_items').delete().eq('order_id', order.id);
+          await supabase.from('order_items').insert(orderItems);
+        } catch (itemsErr) {
+          console.warn('Order items sync ignored:', itemsErr);
+        }
+      }
+
+      return (data && data[0]) ? data[0] : order;
+    } catch (err) {
+      console.error('CRITICAL: upsertOrder failed:', err);
+      throw err;
+    }
   },
 
   // Customers / Users

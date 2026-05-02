@@ -4,18 +4,31 @@ export interface Product {
   price: number;
   description: string;
   image: string;
+  images?: string[];
+  category?: string;
   isFeatured?: boolean;
+  featured?: boolean;
   stock: number;
   status?: 'Published' | 'Draft';
+  rating?: number;
+  reviews?: number;
+  isNew?: boolean;
+  sizes?: string[];
+  colors?: string[];
+  specifications?: Record<string, string>;
+  artisanStory?: string;
+  createdAt?: string;
 }
 
 export interface CartItem extends Product {
   quantity: number;
+  size?: string;
 }
 
 export interface Order {
   id: string;
   userId?: string;
+  phone?: string;
   customer: {
     fullName: string;
     email: string;
@@ -38,7 +51,7 @@ export interface Customer {
   email: string;
   phone: string;
   password?: string;
-  role?: 'user' | 'admin' | 'superadmin';
+  role?: 'user' | 'admin' | 'superadmin' | 'moderator';
   address?: string;
   city?: string;
   location?: 'Inside Dhaka' | 'Outside Dhaka';

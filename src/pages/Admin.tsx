@@ -104,17 +104,19 @@ const Admin: React.FC = () => {
     image: '',
     isFeatured: false,
     stock: 0,
-    status: 'Published'
+    status: 'Published',
+    category: 'Bangles'
   });
 
   const stats = useMemo(() => {
+    if (!products || !orders) return { totalTreasures: 0, totalInventory: 0, totalValue: 0, lowStock: 0, pendingOrders: 0, withdrawnOrders: 0 };
     return {
       totalTreasures: products.length,
-      totalInventory: products.reduce((acc, p) => acc + (Number(p.stock) || 0), 0),
-      totalValue: products.reduce((acc, p) => acc + ((Number(p.price) || 0) * (Number(p.stock) || 0)), 0),
-      lowStock: products.filter(p => (Number(p.stock) || 0) < 5).length,
-      pendingOrders: orders.filter(o => o.status === 'Pending').length,
-      withdrawnOrders: orders.filter(o => o.status === 'Cancelled').length
+      totalInventory: products.reduce((acc, p) => acc + (Number(p?.stock) || 0), 0),
+      totalValue: products.reduce((acc, p) => acc + ((Number(p?.price) || 0) * (Number(p?.stock) || 0)), 0),
+      lowStock: products.filter(p => (Number(p?.stock) || 0) < 5).length,
+      pendingOrders: orders.filter(o => o?.status === 'Pending').length,
+      withdrawnOrders: orders.filter(o => o?.status === 'Cancelled').length
     };
   }, [products, orders]);
 
@@ -846,7 +848,7 @@ const Admin: React.FC = () => {
                                    >
                                       <option value="Pending">Moderator Received</option>
                                       <option value="Approved">Aura Verified</option>
-                                      <option value="Shipped">In Transit</option>
+                                      <option value="In Transit">In Transit</option>
                                       <option value="Delivered">Grand Arrival</option>
                                       <option value="Cancelled">Withdrawn</option>
                                    </select>
@@ -898,7 +900,12 @@ const Admin: React.FC = () => {
                                             </div>
                                             <div>
                                                <p className="text-xs font-bold text-gray-900">{item.name}</p>
-                                               <p className="text-[10px] text-gray-400 uppercase tracking-widest font-black">Quantity: {item.quantity}</p>
+                                               <div className="flex items-center gap-2">
+                                                  <p className="text-[10px] text-gray-400 uppercase tracking-widest font-black">Quantity: {item.quantity}</p>
+                                                  {item.size && (
+                                                     <span className="text-[10px] bg-gold/10 text-gold px-2 py-0.5 rounded font-black uppercase tracking-widest">Size: {item.size}</span>
+                                                  )}
+                                               </div>
                                             </div>
                                          </div>
                                          <p className="text-sm font-bold text-gray-900">৳{((Number(item.price) || 0) * (Number(item.quantity) || 0)).toLocaleString()}</p>
@@ -1087,6 +1094,8 @@ const Admin: React.FC = () => {
                       <tr className="bg-gray-50 border-b border-gray-100">
                         <th className="px-8 py-6 text-[10px] text-gray-400 uppercase tracking-widest font-black">Order ID</th>
                         <th className="px-8 py-6 text-[10px] text-gray-400 uppercase tracking-widest font-black">Customer</th>
+                        <th className="px-8 py-6 text-[10px] text-gray-400 uppercase tracking-widest font-black">Products Purchased</th>
+                        <th className="px-8 py-6 text-[10px] text-gray-400 uppercase tracking-widest font-black">Phone</th>
                         <th className="px-8 py-6 text-[10px] text-gray-400 uppercase tracking-widest font-black">Address</th>
                         <th className="px-8 py-6 text-[10px] text-gray-400 uppercase tracking-widest font-black text-right">Total</th>
                       </tr>
@@ -1099,6 +1108,19 @@ const Admin: React.FC = () => {
                           </td>
                           <td className="px-8 py-6">
                             <p className="text-sm font-bold text-gray-900">{order.customer.fullName}</p>
+                          </td>
+                          <td className="px-8 py-6">
+                            <div className="space-y-1">
+                              {order.items.map((item: any, idx: number) => (
+                                <div key={idx} className="flex flex-col">
+                                  <span className="text-xs font-bold text-gray-700">{item.name} x{item.quantity}</span>
+                                  <span className="text-[10px] text-gray-400 font-mono">ID: {item.id}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </td>
+                          <td className="px-8 py-6">
+                            <p className="text-xs font-bold text-gray-600">{order.phone || order.customer.phone}</p>
                           </td>
                           <td className="px-8 py-6">
                             <p className="text-xs text-gray-500 max-w-[250px] truncate">{order.customer.address}, {order.customer.city}</p>
@@ -1495,20 +1517,35 @@ const Admin: React.FC = () => {
                         type="checkbox" 
                         id="isFeatured"
                         className="w-6 h-6 rounded-lg text-gold focus:ring-gold border-gray-200 cursor-pointer shadow-sm"
-                        checked={formData.isFeatured}
-                        onChange={(e) => setFormData({...formData, isFeatured: e.target.checked})}
+                        checked={formData.isFeatured || formData.featured}
+                        onChange={(e) => setFormData({...formData, isFeatured: e.target.checked, featured: e.target.checked})}
                       />
                       <label htmlFor="isFeatured" className="text-xs uppercase tracking-widest font-black text-gray-600 cursor-pointer">Showcase in Main Hall?</label>
                    </div>
-                   <div className="w-full sm:w-auto flex-grow sm:flex-grow-0 bg-gray-50 px-6 py-2 rounded-xl border border-gray-100 flex items-center">
-                      <select 
-                        value={formData.status || 'Published'}
-                        onChange={(e) => setFormData({...formData, status: e.target.value as any})}
-                        className="w-full bg-transparent border-none text-[10px] font-black uppercase tracking-widest text-gray-600 outline-none"
-                      >
-                         <option value="Published">Published</option>
-                         <option value="Draft">Draft</option>
-                      </select>
+                   <div className="w-full sm:w-auto flex flex-col sm:flex-row gap-4">
+                     <div className="bg-gray-50 px-6 py-2 rounded-xl border border-gray-100 flex items-center">
+                        <select 
+                          value={formData.category || 'Bangles'}
+                          onChange={(e) => setFormData({...formData, category: e.target.value})}
+                          className="w-full bg-transparent border-none text-[10px] font-black uppercase tracking-widest text-gray-600 outline-none"
+                        >
+                           <option value="Bangles">Bangles</option>
+                           <option value="Necklaces">Necklaces</option>
+                           <option value="Earrings">Earrings</option>
+                           <option value="Rings">Rings</option>
+                           <option value="Sets">Complete Sets</option>
+                        </select>
+                     </div>
+                     <div className="bg-gray-50 px-6 py-2 rounded-xl border border-gray-100 flex items-center">
+                        <select 
+                          value={formData.status || 'Published'}
+                          onChange={(e) => setFormData({...formData, status: e.target.value as any})}
+                          className="w-full bg-transparent border-none text-[10px] font-black uppercase tracking-widest text-gray-600 outline-none"
+                        >
+                           <option value="Published">Published</option>
+                           <option value="Draft">Draft</option>
+                        </select>
+                     </div>
                    </div>
                 </div>
 

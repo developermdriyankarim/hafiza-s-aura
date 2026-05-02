@@ -13,8 +13,8 @@ const Cart: React.FC = () => {
   const handleCheckoutClick = (e: React.MouseEvent) => {
     if (!currentUser) {
       e.preventDefault();
-      alert('Artisans require your identification. Please log in to proceed to checkout.');
-      navigate('/login');
+      // No alert needed, just redirect with context
+      navigate('/login?redirect=/checkout');
     }
   };
 
@@ -56,7 +56,7 @@ const Cart: React.FC = () => {
              <AnimatePresence>
                {cart.map((item) => (
                  <motion.div 
-                   key={item.id}
+                   key={`${item.id}-${item.size}`}
                    layout
                    initial={{ opacity: 0, x: -20 }}
                    animate={{ opacity: 1, x: 0 }}
@@ -68,7 +68,12 @@ const Cart: React.FC = () => {
                    </Link>
                    
                    <div className="flex-grow text-center sm:text-left">
-                      <span className="text-[9px] uppercase tracking-widest text-gold font-bold mb-1 block italic">{item.category}</span>
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:gap-3 mb-1">
+                         <span className="text-[9px] uppercase tracking-widest text-gold font-bold italic">{item.category}</span>
+                         {item.size && (
+                           <span className="text-[9px] uppercase tracking-widest bg-gray-50 text-gray-400 font-bold px-2 py-0.5 rounded-full">Size: {item.size}</span>
+                         )}
+                      </div>
                       <h3 className="text-lg font-display font-semibold hover:text-gold transition-colors">
                         <Link to={`/product/${item.id}`}>{item.name}</Link>
                       </h3>
@@ -76,9 +81,9 @@ const Cart: React.FC = () => {
                    </div>
 
                    <div className="flex items-center border border-gray-100 rounded-full bg-gray-50/50">
-                      <button onClick={() => updateQuantity(item.id, item.quantity - 1)} className="p-3 text-gray-400 hover:text-gold"><Minus className="w-4 h-4" /></button>
+                      <button onClick={() => updateQuantity(item.id, item.quantity - 1, item.size)} className="p-3 text-gray-400 hover:text-gold"><Minus className="w-4 h-4" /></button>
                       <span className="w-8 text-center text-sm font-bold">{item.quantity}</span>
-                      <button onClick={() => updateQuantity(item.id, item.quantity + 1)} className="p-3 text-gray-400 hover:text-gold"><Plus className="w-4 h-4" /></button>
+                      <button onClick={() => updateQuantity(item.id, item.quantity + 1, item.size)} className="p-3 text-gray-400 hover:text-gold"><Plus className="w-4 h-4" /></button>
                    </div>
 
                    <div className="text-lg font-bold text-gray-900 min-w-[80px] text-right">
@@ -86,7 +91,7 @@ const Cart: React.FC = () => {
                    </div>
 
                    <button 
-                    onClick={() => removeFromCart(item.id)}
+                    onClick={() => removeFromCart(item.id, item.size)}
                     className="p-3 text-gray-300 hover:text-red-500 transition-colors"
                    >
                       <Trash2 className="w-5 h-5" />

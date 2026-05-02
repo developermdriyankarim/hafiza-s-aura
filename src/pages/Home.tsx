@@ -7,7 +7,11 @@ import { ArrowRight, Star, ShieldCheck, Truck, User } from 'lucide-react';
 
 const Home: React.FC = () => {
   const { products } = useProducts();
-  const featuredProducts = products.filter(p => p.isFeatured && p.status !== 'Draft').slice(0, 4);
+  const featuredProducts = products
+    ? products
+        .filter(p => p && (p.isFeatured || p.featured) && p.status !== 'Draft')
+        .slice(0, 5)
+    : [];
 
   return (
     <div className="overflow-x-hidden">
