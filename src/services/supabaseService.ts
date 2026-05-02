@@ -14,17 +14,16 @@ export const supabaseService = {
       throw error;
     }
 
-    console.log('Raw products from Supabase:', data);
-
     return (data || []).map(p => ({
       id: p.id,
-      name: p.name,
+      name: p.name || 'Untitled Product',
       price: Number(p.price) || 0,
       description: p.description || '',
+      // Fallback to a high-quality placeholder if image is NULL in Supabase
       image: p.image || 'https://images.unsplash.com/photo-1611085583191-a3b1787255fe?q=80&w=1000',
       category: p.category || 'Jewelry',
       stock: Number(p.stock) || 0,
-      isFeatured: p.isFeatured || false,
+      isFeatured: Boolean(p.isFeatured),
       status: p.status || 'Published',
       artisanStory: p.artisanStory || '',
       createdAt: p.createdAt

@@ -5,6 +5,7 @@ import { supabaseService } from '../services/supabaseService';
 
 interface ProductContextType {
   products: Product[];
+  isLoading: boolean;
   addProduct: (product: Product) => Promise<void>;
   updateProduct: (product: Product) => Promise<void>;
   deleteProduct: (productId: string) => Promise<void>;
@@ -15,25 +16,30 @@ interface ProductContextType {
 const ProductContext = createContext<ProductContextType | undefined>(undefined);
 
 export const ProductProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [products, setProducts] = useState<Product[]>(() => {
-    try {
-      const saved = localStorage.getItem('aura_products');
-      return saved ? JSON.parse(saved) : initialProducts;
-    } catch (e) {
-      return initialProducts;
-    }
-  });
+  const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   const syncWithSupabase = async () => {
+    setIsLoading(true);
     try {
+      console.log('🔄 Syncing products with Supabase...');
       const dbData = await supabaseService.getProducts();
+      
       if (dbData && Array.isArray(dbData)) {
-        console.log(`Fetched ${dbData.length} products from Supabase`);
-        setProducts(dbData); // Overwrite local with DB for a clean sync
+        console.log(`✅ Success: Loaded ${dbData.length} products from Supabase`);
+        setProducts(dbData);
+        // Save to cache for offline support, but we always prefer the fresh DB data
+        localStorage.setItem('aura_products', JSON.stringify(dbData));
+      } else {
+        console.warn('⚠️ No products found in Supabase table.');
+        // Fallback to local storage only if DB returns nothing
+        const saved = localStorage.getItem('aura_products');
+        if (saved) setProducts(JSON.parse(saved));
       }
     } catch (e) {
-      console.error('Supabase products sync failed:', e);
+      console.error('❌ Supabase products sync failed:', e);
+      const saved = localStorage.getItem('aura_products');
+      if (saved) setProducts(JSON.parse(saved));
     } finally {
       setIsLoading(false);
     }
@@ -41,6 +47,13 @@ export const ProductProvider: React.FC<{ children: ReactNode }> = ({ children })
 
   useEffect(() => {
     syncWithSupabase();
+  }, []);
+
+  // Use a separate effect to refresh when the window gains focus (optional but helpful)
+  useEffect(() => {
+    const handleFocus = () => syncWithSupabase();
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
   }, []);
 
   useEffect(() => {
@@ -110,7 +123,7 @@ export const ProductProvider: React.FC<{ children: ReactNode }> = ({ children })
   };
 
   return (
-    <ProductContext.Provider value={{ products, addProduct, updateProduct, deleteProduct, getProductById, syncWithSupabase }}>
+    <ProductContext.Provider value={{ products, isLoading, addProduct, updateProduct, deleteProduct, getProductById, syncWithSupabase }}>
       {children}
     </ProductContext.Provider>
   );

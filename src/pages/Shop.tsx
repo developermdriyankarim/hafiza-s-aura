@@ -6,7 +6,7 @@ import { Search, SlidersHorizontal, ChevronDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
 const Shop: React.FC = () => {
-  const { products } = useProducts();
+  const { products, isLoading } = useProducts();
   const location = useLocation();
   const [searchQuery, setSearchQuery] = useState('');
   const [priceSort, setPriceSort] = useState('Featured');
@@ -39,6 +39,17 @@ const Shop: React.FC = () => {
 
     return result;
   }, [searchQuery, priceSort, products]);
+
+  if (isLoading && products.length === 0) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-gold border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-luxury font-display text-xl uppercase tracking-widest">Loading Treasures...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-white">
