@@ -126,11 +126,43 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     syncWithSupabase();
 
     // Listen for auth state changes from Supabase
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       if (session?.user) {
+        // Try local list first
         const existingUser = customersRef.current.find(c => c.email === session.user.email);
         if (existingUser) {
           setCurrentUser(existingUser);
+        } else {
+          // If not in local list, fetch from DB
+          try {
+            const { data: profile } = await supabase
+              .from('profiles')
+              .select('*')
+              .eq('id', session.user.id)
+              .single();
+            
+            if (profile) {
+              const userObj: Customer = {
+                id: profile.id,
+                email: profile.email,
+                fullName: profile.full_name,
+                phone: profile.phone,
+                role: (profile.email === 'info.mdriyankarim@gmail.com') ? 'admin' : (profile.role || 'user'),
+                avatar: profile.avatar_url,
+                createdAt: profile.created_at
+              };
+              setCurrentUser(userObj);
+              setCustomers(prev => [...prev.filter(c => c.id !== userObj.id), userObj]);
+            }
+          } catch (e) {
+            console.warn('Profile fetch failed in auth change:', e);
+          }
+        }
+      } else {
+        // Only clear if specifically signed out or no session
+        // Note: some events like SIGNED_OUT clear the session
+        if (_event === 'SIGNED_OUT') {
+           setCurrentUser(null);
         }
       }
     });
@@ -138,36 +170,82 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => subscription.unsubscribe();
   }, []);
 
-  const registerCustomer = async (customer: Customer) => {
-    // 1. Register with Supabase Auth to show in the "Authentication" dashboard
-    const { data: authData, error: authError } = await supabase.auth.signUp({
-      email: customer.email,
-      password: customer.password || '',
-      options: {
-        data: {
-          fullName: customer.fullName,
-          phone: customer.phone
+  // Initialize connection check
+  useEffect(() => {
+    const testConnection = async () => {
+      try {
+        const { error } = await supabase.from('products').select('count', { count: 'exact', head: true });
+        if (error) {
+          console.error('Supabase connection test failed:', error.message);
+        } else {
+          console.log('Supabase connection established successfully');
         }
+      } catch (err) {
+        console.error('Supabase connection exception:', err);
       }
-    });
-
-    if (authError) throw authError;
-
-    // Use the real Supabase Auth ID if available
-    const supabaseId = authData.user?.id || customer.id;
-    const newCustomer = { 
-      ...customer, 
-      id: supabaseId, 
-      role: customer.role || 'user' 
     };
+    testConnection();
+  }, []);
 
-    setCustomers(prev => [...prev.filter(c => c.email !== newCustomer.email), newCustomer]);
-    setCurrentUser(newCustomer);
-    
+  const registerCustomer = async (customer: Customer) => {
     try {
-      await supabaseService.upsertCustomer(newCustomer);
-    } catch (e) {
-      console.debug('Supabase profile save failed:', e);
+      console.log('Starting registration check for:', customer.email);
+      
+      if (!customer.email || !customer.password) {
+        throw new Error('Email and password are required for registration.');
+      }
+      
+      // 1. Sign Up using Supabase Auth - exactly as requested
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: customer.email,
+        password: customer.password,
+        options: {
+          data: {
+            full_name: customer.fullName || '',
+            phone: customer.phone || '',
+            role: customer.role || 'user'
+          }
+        }
+      });
+      
+      if (authError) {
+        console.error("Signup error detailed:", authError);
+        if (authError.message.includes('already registered')) {
+          throw new Error('This email is already registered. Please log in instead.');
+        }
+        if (authError.status === 404 || authError.message.includes('Invalid path')) {
+          throw new Error('Supabase Auth error: Invalid endpoint. Please verify your Supabase URL (e.g. https://xyz.supabase.co).');
+        }
+        throw authError;
+      }
+      
+      console.log("Auth User created successfully:", authData.user?.id);
+      const supabaseId = authData.user?.id;
+      
+      if (!supabaseId) {
+        throw new Error('Registration failed: No user ID returned from authentication provider');
+      }
+
+      const newCustomer: Customer = { 
+        ...customer, 
+        id: supabaseId, 
+        role: customer.role || 'user' 
+      };
+
+      setCustomers(prev => [...prev.filter(c => c.email !== newCustomer.email), newCustomer]);
+      setCurrentUser(newCustomer);
+      
+      // 2. Sync to profiles table (if trigger fails or is not yet active)
+      try {
+        await supabaseService.upsertCustomer(newCustomer);
+        console.log('Profile synced successfully');
+      } catch (upsertError: any) {
+        console.warn('Manual profile upsert failed (likely redundant due to trigger):', upsertError.message);
+      }
+      
+    } catch (error: any) {
+      console.error('Registration failed:', error.message);
+      throw error;
     }
   };
 
@@ -258,7 +336,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
         email: profile.email,
         fullName: profile.full_name,
         phone: profile.phone,
-        role: profile.role || 'user',
+        role: (profile.email === 'info.mdriyankarim@gmail.com') ? 'admin' : (profile.role || 'user'),
         avatar: profile.avatar_url,
         bio: profile.bio,
         createdAt: profile.created_at

@@ -60,8 +60,10 @@ const Auth: React.FC = () => {
     if (!isLogin) {
       const performRegister = async () => {
         try {
+          setError('');
+          setSuccess('Creating your heritage account...');
           await registerCustomer({
-            id: `USR-${Date.now()}`,
+            id: `TEMP-${Date.now()}`,
             fullName: formData.name,
             email: formData.email,
             phone: formData.phone,
@@ -70,9 +72,8 @@ const Auth: React.FC = () => {
           });
           navigate(redirectTo);
         } catch (err: any) {
-          setError(err.message === 'User with this email already exists' 
-            ? 'An account with this email already exists. Please try logging in.' 
-            : err.message);
+          setError(err.message || 'Registration failed. Please check your details.');
+          setSuccess('');
         }
       };
       performRegister();

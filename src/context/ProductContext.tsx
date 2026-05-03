@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { Product } from '../types';
 import { products as initialProducts } from '../data/products';
 import { supabaseService } from '../services/supabaseService';
+import { supabase } from '../lib/supabase';
 
 interface ProductContextType {
   products: Product[];

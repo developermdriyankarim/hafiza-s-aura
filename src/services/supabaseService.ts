@@ -80,10 +80,12 @@ export const supabaseService = {
   },
   async upsertOrder(order: Order) {
     try {
+      console.log('Attempting to sync order to Supabase:', order.id);
+      
       // 1. Prepare data for DB (matching underscore_case schema)
       const dbOrder: any = {
         id: order.id,
-        user_id: order.userId,
+        user_id: order.userId || null,
         items: Array.isArray(order.items) ? order.items : [],
         total: Number(order.total) || 0,
         status: order.status || 'Pending',
@@ -92,18 +94,25 @@ export const supabaseService = {
         created_at: order.createdAt || new Date().toISOString()
       };
 
-      // 2. Upsert the main order
+      // 2. Insert the main order
       const { data, error } = await supabase
         .from('orders')
-        .upsert(dbOrder)
+        .insert(dbOrder)
         .select();
       
       if (error) {
-        console.error('Supabase Order Upsert Error:', error);
+        console.error('Supabase Order Insert Error!', {
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code
+        });
         throw error;
       }
 
-      // 3. Track in Order History
+      console.log('Order table sync success:', data?.[0]?.id);
+
+      // 3. Track in Order History (Non-blocking)
       try {
         await supabase.from('order_history').insert({
           order_id: order.id,
@@ -111,12 +120,12 @@ export const supabaseService = {
           notes: 'Order placed via website checkout'
         });
       } catch (historyErr) {
-        console.warn('Order history entry failed:', historyErr);
+        console.warn('Order history entry failed (optional):', historyErr);
       }
 
       return (data && data[0]) ? data[0] : order;
-    } catch (err) {
-      console.error('CRITICAL: upsertOrder failed:', err);
+    } catch (err: any) {
+      console.error('CRITICAL: Order sync failed:', err.message || err);
       throw err;
     }
   },
@@ -135,17 +144,31 @@ export const supabaseService = {
     })) as Customer[];
   },
   async upsertCustomer(customer: Customer) {
-    const dbCustomer = {
-      id: customer.id,
-      full_name: customer.fullName,
-      email: customer.email,
-      role: customer.role,
-      avatar_url: customer.avatar,
-      created_at: customer.createdAt || new Date().toISOString()
-    };
-    const { data, error } = await supabase.from('profiles').upsert(dbCustomer).select().single();
-    if (error) throw error;
-    return data as Customer;
+    try {
+      const dbCustomer = {
+        id: customer.id,
+        full_name: customer.fullName || '',
+        email: customer.email,
+        role: customer.role || 'user',
+        avatar_url: customer.avatar || '',
+        created_at: customer.createdAt || new Date().toISOString()
+      };
+      
+      const { data, error } = await supabase
+        .from('profiles')
+        .upsert(dbCustomer, { onConflict: 'id' })
+        .select()
+        .single();
+        
+      if (error) {
+        console.error('Supabase Profile Upsert Error:', error);
+        throw error;
+      }
+      return data as Customer;
+    } catch (err) {
+      console.error('Failed in upsertCustomer:', err);
+      throw err;
+    }
   },
   async updateProfile(id: string, updates: any) {
     const dbUpdates: any = {};
