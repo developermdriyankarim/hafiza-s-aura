@@ -238,7 +238,6 @@ const ProductDetail: React.FC = () => {
                                <li className="flex gap-2"><span>•</span> <span>তৈরি প্রক্রিয়া: কাপড় নির্বাচন → ডিজাইন → হাতের কাজ/প্রিন্ট → ফিনিশিং → প্রস্তুত</span></li>
                                <li className="flex gap-2"><span>•</span> <span>পরার স্টাইল: সিম্পল, ট্র্যাডিশনাল, পার্টি ওয়্যার ও মডার্ন ফিউশন</span></li>
                                <li className="flex gap-2"><span>•</span> <span>দাম নির্ভর করে: কাপড়, কাজের ধরন, ডিজাইন ও মানের উপর</span></li>
-                               <li className="flex gap-2"><span>•</span> <span>বিশেষত্ব: প্রতিটি শাড়ি ইউনিক ও হাতে তৈরি ✨</span></li>
                                <li className="mt-4 p-3 bg-rose-50 text-[#E2136E] rounded-xl border border-rose-100 text-center text-sm">
                                   ৩০% অগ্রিম প্রদান আবশ্যক (30% Advance Required)
                                </li>
