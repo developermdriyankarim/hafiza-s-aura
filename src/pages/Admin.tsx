@@ -530,7 +530,7 @@ const Admin: React.FC = () => {
               className="w-full md:w-auto bg-gray-900 text-gold px-6 md:px-10 py-4 rounded-full text-[10px] font-black uppercase tracking-[0.2em] hover:bg-gold hover:text-white transition-all flex items-center justify-center space-x-3 shadow-xl"
              >
                 <Plus className="w-4 h-4" />
-                <span>{activeTab === 'inventory' ? 'Create Bangle' : 'Add Moderator'}</span>
+                <span>{activeTab === 'inventory' ? 'Create Treasure' : 'Add Moderator'}</span>
              </button>
            )}
         </header>
@@ -609,7 +609,7 @@ const Admin: React.FC = () => {
                  <table className="w-full text-left min-w-[700px]">
                     <thead>
                        <tr className="bg-gray-50 border-b border-gray-100">
-                          <th className="px-6 md:px-8 py-6 text-[10px] text-gray-400 uppercase tracking-widest font-black">Bangle Item</th>
+                          <th className="px-6 md:px-8 py-6 text-[10px] text-gray-400 uppercase tracking-widest font-black">Heritage Item</th>
                           <th className="px-6 md:px-8 py-6 text-[10px] text-gray-400 uppercase tracking-widest font-black">Valuation</th>
                           <th className="px-6 md:px-8 py-6 text-[10px] text-gray-400 uppercase tracking-widest font-black">Vault Stock</th>
                           <th className="px-6 md:px-8 py-6 text-[10px] text-gray-400 uppercase tracking-widest font-black text-right">Aura Actions</th>
@@ -673,7 +673,7 @@ const Admin: React.FC = () => {
           {activeTab === 'receive' && (
             <div className="max-w-3xl mx-auto space-y-10">
                <div className="bg-white p-10 rounded-3xl border border-gray-100 shadow-sm">
-                  <h3 className="text-xl font-display mb-8">Incoming Bangles</h3>
+                  <h3 className="text-xl font-display mb-8">Incoming Treasures</h3>
                   <div className="space-y-8">
                      <div className="relative group">
                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-300 group-hover:text-gold transition-colors" />
@@ -740,7 +740,7 @@ const Admin: React.FC = () => {
                               >
                                  <div className="bg-gold/5 p-6 rounded-2xl border border-gold/10">
                                     <p className="text-xs font-bold uppercase tracking-widest text-gold mb-2">Receiving Log</p>
-                                    <p className="text-sm text-gray-600">You are adding stock to <span className="font-bold text-gray-900">"{selectedReceiveProduct.name}"</span>. This will update the Bangle inventory instantly.</p>
+                                    <p className="text-sm text-gray-600">You are adding stock to <span className="font-bold text-gray-900">"{selectedReceiveProduct.name}"</span>. This will update the inventory instantly.</p>
                                  </div>
                                  <div className="relative">
                                     <Package className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-300" />
@@ -807,7 +807,7 @@ const Admin: React.FC = () => {
                {orders.length === 0 ? (
                  <div className="bg-white rounded-3xl p-20 text-center border border-gray-100 italic">
                     <ShoppingBag className="w-16 h-16 text-gray-100 mx-auto mb-6" />
-                    <h3 className="text-2xl font-display text-gray-400">No Bangles have been selected yet...</h3>
+                    <h3 className="text-2xl font-display text-gray-400">No Treasures have been selected yet...</h3>
                  </div>
                ) : (
                  <div className="space-y-6">
@@ -860,7 +860,7 @@ const Admin: React.FC = () => {
                              </div>
                           </div>
                           
-                          <div className="grid grid-cols-1 lg:grid-cols-3">
+                          <div className="grid grid-cols-1 lg:grid-cols-4">
                              {/* Customer Details */}
                              <div className="p-8 border-b lg:border-b-0 lg:border-r border-gray-50 bg-gray-50/30">
                                 <h5 className="text-[10px] uppercase tracking-[0.2em] font-black text-gray-900 mb-6 flex items-center space-x-2">
@@ -885,11 +885,46 @@ const Admin: React.FC = () => {
                                 </div>
                              </div>
 
+                             {/* Payment Information */}
+                             <div className="p-8 border-b lg:border-b-0 lg:border-r border-gray-50 bg-white">
+                                <h5 className="text-[10px] uppercase tracking-[0.2em] font-black text-gray-900 mb-6 flex items-center space-x-2">
+                                   <DollarSign className="w-4 h-4 text-emerald-500" />
+                                   <span>Payment Data</span>
+                                </h5>
+                                <div className="space-y-5">
+                                   <div className="flex justify-between items-center bg-gray-50 p-3 rounded-xl">
+                                      <p className="text-[10px] uppercase tracking-widest font-black text-gray-400">Method</p>
+                                      <span className={`text-[10px] font-black uppercase px-2 py-1 rounded ${order.paymentMethod === 'bKash' ? 'bg-rose-50 text-rose-600' : 'bg-gray-100 text-gray-600'}`}>
+                                         {order.paymentMethod || 'COD'}
+                                      </span>
+                                   </div>
+                                   
+                                   {order.transactionId && (
+                                      <div className="p-4 bg-emerald-50 border border-emerald-100 rounded-xl space-y-2">
+                                         <p className="text-[10px] uppercase tracking-widest font-black text-emerald-800">Transaction ID</p>
+                                         <p className="text-sm font-mono font-bold text-emerald-900 break-all select-all">{order.transactionId}</p>
+                                      </div>
+                                   )}
+
+                                   {order.advanceAmount && order.advanceAmount > 0 ? (
+                                      <div className="p-4 bg-rose-50 border border-rose-100 rounded-xl space-y-2">
+                                         <p className="text-[10px] uppercase tracking-widest font-black text-rose-800">Advance Paid</p>
+                                         <p className="text-sm font-bold text-rose-900">৳{order.advanceAmount.toLocaleString()}</p>
+                                      </div>
+                                   ) : (
+                                      <div className="p-4 bg-gray-50 border border-gray-100 rounded-xl">
+                                         <p className="text-[10px] uppercase tracking-widest font-black text-gray-400">Advance</p>
+                                         <p className="text-xs text-gray-500 italic">No advance payment</p>
+                                      </div>
+                                   )}
+                                </div>
+                             </div>
+
                              {/* Items List */}
                              <div className="lg:col-span-2 p-8">
                                 <h5 className="text-[10px] uppercase tracking-[0.2em] font-black text-gray-900 mb-6 flex items-center space-x-2">
                                    <PackageCheck className="w-4 h-4 text-gold" />
-                                   <span>Bangle Selection</span>
+                                   <span>Product Selection</span>
                                 </h5>
                                 <div className="space-y-4">
                                    {order.items.map(item => (
@@ -1530,6 +1565,7 @@ const Admin: React.FC = () => {
                           className="w-full bg-transparent border-none text-[10px] font-black uppercase tracking-widest text-gray-600 outline-none"
                         >
                            <option value="Bangles">Bangles</option>
+                           <option value="Saree">Saree Items</option>
                            <option value="Necklaces">Necklaces</option>
                            <option value="Earrings">Earrings</option>
                            <option value="Rings">Rings</option>

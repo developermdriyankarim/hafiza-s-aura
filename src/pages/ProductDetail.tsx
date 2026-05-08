@@ -10,7 +10,7 @@ import ProductCard from '../components/ProductCard';
 const ProductDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { products } = useProducts();
+  const { products, isLoading } = useProducts();
   const { addToCart } = useCart();
   const { currentUser } = useUsers();
   const [quantity, setQuantity] = useState(1);
@@ -18,6 +18,14 @@ const ProductDetail: React.FC = () => {
   const [activeTab, setActiveTab] = useState('details');
 
   const product = products.find(p => p.id === id);
+  
+  const isSaree = React.useMemo(() => {
+    if (!product) return false;
+    const cat = (product.category || '').toLowerCase();
+    const name = (product.name || '').toLowerCase();
+    return cat.includes('saree') || cat.includes('sharee') || cat.includes('shari') || 
+           name.includes('saree') || name.includes('sharee') || name.includes('shari');
+  }, [product]);
 
   const relatedProducts = React.useMemo(() => {
     if (!product) return [];
@@ -27,12 +35,27 @@ const ProductDetail: React.FC = () => {
       .slice(0, 6);
   }, [products, product?.id]);
 
-  if (!product) {
+  if (isLoading && !product) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
+      <div className="min-h-screen bg-white flex flex-col items-center justify-center">
+        <div className="w-10 h-10 border-2 border-gold/20 border-t-gold rounded-full animate-spin mb-4" />
+        <p className="text-[10px] uppercase tracking-[0.2em] text-gray-400 font-bold animate-pulse">Accessing Aura Vault...</p>
+      </div>
+    );
+  }
+
+  if (!product && !isLoading) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center px-4">
         <div className="text-center">
-          <p className="text-gray-400 font-display italic">Seeking treasure in Aura vaults...</p>
-          <button onClick={() => navigate('/shop')} className="mt-4 text-gold underline font-bold uppercase tracking-widest text-[10px]">Back to Shop</button>
+          <p className="text-gray-900 font-display text-2xl mb-2">Treasure Not Found</p>
+          <p className="text-gray-400 text-sm mb-8 font-medium italic">The item you seek has vanished into the vaults...</p>
+          <button 
+            onClick={() => navigate('/shop')} 
+            className="bg-gray-900 text-white px-8 py-3 rounded-full text-[10px] font-black uppercase tracking-[0.3em] hover:bg-gold transition-all"
+          >
+            Back to Collection
+          </button>
         </div>
       </div>
     );
@@ -115,31 +138,41 @@ const ProductDetail: React.FC = () => {
             
             <p className="text-gray-600 leading-relaxed mb-10 text-lg">
               {product.description}
-            </p>
-
-            <div className="space-y-8">
-              {/* Size Selector */}
-              <div className="space-y-4">
-                <div className="flex justify-between items-center">
-                  <span className="text-[10px] uppercase tracking-widest font-bold text-gray-400">Select Size (cm)</span>
-                  <button className="text-[10px] uppercase tracking-widest font-bold text-gold hover:underline">Size Guide</button>
+            </p>            <div className="space-y-8">
+              {/* Size Selector or Saree Info */}
+              {isSaree ? (
+                <div className="bg-rose-50/50 p-6 rounded-2xl border border-rose-100/50">
+                  <div className="flex items-center gap-3 text-[#E2136E] mb-2 font-bold">
+                    <div className="w-1.5 h-1.5 rounded-full bg-[#E2136E] animate-pulse" />
+                    <span className="text-[10px] uppercase tracking-widest">Saree Specification</span>
+                  </div>
+                  <p className="text-gray-900 font-bold text-lg">
+                    • এই প্রোডাক্টের সাইজ প্রায় ১২–১৪ হাত লম্বা 
+                  </p>
                 </div>
-                <div className="grid grid-cols-5 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-6 xl:grid-cols-8 gap-2">
-                  {availableSizes.map((size) => (
-                    <button
-                      key={size}
-                      onClick={() => setSelectedSize(size)}
-                      className={`h-10 border text-xs font-bold transition-all rounded-sm ${
-                        selectedSize === size 
-                        ? 'border-gold bg-gold text-white' 
-                        : 'border-gray-100 hover:border-gold/50 text-gray-500'
-                      }`}
-                    >
-                      {size}
-                    </button>
-                  ))}
+              ) : (
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <span className="text-[10px] uppercase tracking-widest font-bold text-gray-400">Select Size (cm)</span>
+                    <button className="text-[10px] uppercase tracking-widest font-bold text-gold hover:underline">Size Guide</button>
+                  </div>
+                  <div className="grid grid-cols-5 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-6 xl:grid-cols-8 gap-2">
+                    {availableSizes.map((size) => (
+                      <button
+                        key={size}
+                        onClick={() => setSelectedSize(size)}
+                        className={`h-10 border text-xs font-bold transition-all rounded-sm ${
+                          selectedSize === size 
+                          ? 'border-gold bg-gold text-white' 
+                          : 'border-gray-100 hover:border-gold/50 text-gray-500'
+                        }`}
+                      >
+                        {size}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* Quantity Selector */}
               <div className="flex items-center space-x-6">
@@ -165,22 +198,16 @@ const ProductDetail: React.FC = () => {
               <div className="flex gap-4">
                 <button 
                   onClick={handleAddToCart}
-                  className="flex-grow bg-gold text-white px-10 py-5 rounded-sm text-sm font-bold uppercase tracking-widest hover:bg-accent-gold transition-all shadow-lg luxury-shadow flex items-center justify-center space-x-3"
+                  className="flex-grow bg-gray-900 text-white px-10 py-5 rounded-sm text-sm font-bold uppercase tracking-widest hover:bg-[#E2136E] transition-all shadow-lg flex items-center justify-center space-x-3"
                 >
                   <ShoppingBag className="w-5 h-5" />
                   <span>Purchase Heritage</span>
-                </button>
-                <button className="p-5 border border-gray-100 bg-white rounded-sm text-gray-400 hover:text-red-500 hover:border-red-100 transition-all">
-                   <Heart className="w-6 h-6" />
-                </button>
-                <button className="p-5 border border-gray-100 bg-white rounded-sm text-gray-400 hover:text-gold hover:border-gold/30 transition-all">
-                   <Share2 className="w-6 h-6" />
                 </button>
               </div>
             </div>
 
             {/* Product Meta */}
-            <div className="mt-12 pt-8 border-t border-gray-100 space-y-4">
+            <div className="mt-12 pt-8 border-t border-gray-100 space-y-6">
                <div className="flex space-x-10">
                  <button 
                   onClick={() => setActiveTab('details')}
@@ -190,22 +217,70 @@ const ProductDetail: React.FC = () => {
                  </button>
                  <button 
                   onClick={() => setActiveTab('shipping')}
-                  className={`text-[10px] uppercase tracking-widest font-bold pb-2 border-b-2 transition-all ${activeTab === 'shipping' ? 'border-gold text-gold' : 'border-transparent text-gray-400 hover:text-gray-600'}`}
+                  className={`text-[10px] uppercase tracking-widest font-bold pb-2 border-b-2 transition-all ${activeTab === 'shipping' ? 'border-[#E2136E] text-[#E2136E]' : 'border-transparent text-gray-400 hover:text-gray-600'}`}
                  >
-                   Shipping & Returns
+                   🚚 delivery info
                  </button>
                </div>
                
-               <div className="text-sm text-gray-500 leading-relaxed min-h-[100px]">
+                <div className="text-sm text-gray-800 leading-relaxed">
                   {activeTab === 'details' ? (
-                    <ul className="list-disc pl-5 space-y-2">
-                       <li>Handcrafted premium finish</li>
-                       <li>Dimensions: Adjustable standard size</li>
-                       <li>Weight: Approx. 45g each</li>
-                       <li>Comes in a premium velvet-lined wooden box</li>
-                    </ul>
+                    <div className="space-y-4">
+                       {isSaree ? (
+                         <div className="space-y-4">
+                            <div className="flex items-center gap-2 text-[#E2136E] font-display font-bold border-b border-rose-100 pb-2">
+                               <span className="text-lg">🧵</span>
+                               <span className="text-sm md:text-base">শাড়ি সম্পর্কে সংক্ষেপে (Product Details)</span>
+                            </div>
+                            <ul className="space-y-3 text-gray-950 font-semibold md:text-base">
+                               <li className="flex gap-2"><span>•</span> <span>কাপড়: মসলিন, জর্জেট, সিল্ক, কটন, হ্যান্ডপেইন্টেড ও কারচুপি কাপড়</span></li>
+                               <li className="flex gap-2"><span>•</span> <span>ডিজাইন: হ্যান্ড পেইন্ট 🎨, কারচুপি কাজ 🧵, প্রিন্ট ও ব্লক প্রিন্ট</span></li>
+                               <li className="flex gap-2"><span>•</span> <span>তৈরি প্রক্রিয়া: কাপড় নির্বাচন → ডিজাইন → হাতের কাজ/প্রিন্ট → ফিনিশিং → প্রস্তুত</span></li>
+                               <li className="flex gap-2"><span>•</span> <span>পরার স্টাইল: সিম্পল, ট্র্যাডিশনাল, পার্টি ওয়্যার ও মডার্ন ফিউশন</span></li>
+                               <li className="flex gap-2"><span>•</span> <span>দাম নির্ভর করে: কাপড়, কাজের ধরন, ডিজাইন ও মানের উপর</span></li>
+                               <li className="flex gap-2"><span>•</span> <span>বিশেষত্ব: প্রতিটি শাড়ি ইউনিক ও হাতে তৈরি ✨</span></li>
+                               <li className="mt-4 p-3 bg-rose-50 text-[#E2136E] rounded-xl border border-rose-100 text-center text-sm">
+                                  ৩০% অগ্রিম প্রদান আবশ্যক (30% Advance Required)
+                               </li>
+                            </ul>
+                         </div>
+                       ) : (
+                         <ul className="list-disc pl-5 space-y-3">
+                            <li className="font-bold">Handcrafted premium finish with artistic attention to detail</li>
+                            <li>Dimensions: Adjustable standard size for perfect fit</li>
+                            <li>Artisan handmade with premium local materials</li>
+                            <li>Comes in our signature luxury eco-friendly packaging</li>
+                         </ul>
+                       )}
+                    </div>
                   ) : (
-                    <p>Complimentary express shipping on all orders. Free returns within 14 days of delivery. Terms and conditions apply.</p>
+                    <div className="bg-gray-50 p-6 rounded-3xl border border-gray-100 space-y-4">
+                        <ul className="space-y-3 text-sm md:text-base text-gray-950 font-semibold">
+                            <li className="flex items-center gap-3">
+                              <span className="flex-shrink-0 w-8 h-8 flex items-center justify-center bg-white rounded-full shadow-sm text-lg">📦</span>
+                              <span>সারা বাংলাদেশে কুরিয়ার সার্ভিসের মাধ্যমে ডেলিভারি</span>
+                            </li>
+                            <li className="flex items-center gap-3">
+                              <span className="flex-shrink-0 w-8 h-8 flex items-center justify-center bg-white rounded-full shadow-sm text-lg">⏳</span>
+                              <span>হ্যান্ড পেইন্ট ও কারচুপি পণ্য প্রি-অর্ডার ভিত্তিতে তৈরি</span>
+                            </li>
+                            <li className="flex items-center gap-3">
+                              <span className="flex-shrink-0 w-8 h-8 flex items-center justify-center bg-white rounded-full shadow-sm text-lg">🧵</span>
+                              <span>ডেলিভারি সময়: ১৫–১৮ দিন (হ্যান্ডমেড পণ্য)</span>
+                            </li>
+                            <li className="flex items-center gap-3">
+                              <span className="flex-shrink-0 w-8 h-8 flex items-center justify-center bg-white rounded-full shadow-sm text-lg">🛍️</span>
+                              <span>হাতে তৈরি চুড়ির ডেলিভারি সময়: ২–৪ দিন</span>
+                            </li>
+                            <li className="flex items-center gap-3">
+                              <span className="flex-shrink-0 w-8 h-8 flex items-center justify-center bg-white rounded-full shadow-sm text-lg">💰</span>
+                              <span>কুরিয়ার চার্জ প্রযোজ্য</span>
+                            </li>
+                            <li className="mt-4 p-4 bg-[#E2136E] text-white rounded-2xl text-center shadow-lg transform -rotate-1">
+                                ৩০% অগ্রিম প্রদান আবশ্যক (30% Advance Required)
+                            </li>
+                        </ul>
+                    </div>
                   )}
                </div>
             </div>

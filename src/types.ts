@@ -40,6 +40,9 @@ export interface Order {
   items: CartItem[];
   total: number;
   deliveryFee: number;
+  advanceAmount?: number;
+  transactionId?: string;
+  paymentMethod?: 'Cash on Delivery' | 'bKash';
   status: 'Pending' | 'Approved' | 'Shipped' | 'Delivered' | 'Cancelled';
   createdAt: string;
   deliveryDate?: string;

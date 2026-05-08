@@ -70,6 +70,7 @@ export default function App() {
                       <Route path="/shipping-returns" element={<ShippingReturns />} />
                       <Route path="/privacy-policy" element={<PrivacyPolicy />} />
                       <Route path="/terms-of-service" element={<TermsOfService />} />
+                      <Route path="*" element={<Home />} />
                     </Routes>
                   </AppLayout>
                 </CartProvider>

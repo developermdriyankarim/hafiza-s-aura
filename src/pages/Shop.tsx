@@ -12,12 +12,16 @@ const Shop: React.FC = () => {
   const [priceSort, setPriceSort] = useState('Featured');
   const [isFilterOpen, setIsFilterOpen] = useState(false);
 
-  // Sync search query from URL if present
+  // Sync search and category from URL
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const search = params.get('search');
+    const category = params.get('category');
+    
     if (search) {
       setSearchQuery(search);
+    } else if (category) {
+      setSearchQuery(category); // Use search query state for simplicity or add dedicated category state
     }
   }, [location.search]);
 
@@ -27,7 +31,10 @@ const Shop: React.FC = () => {
 
     // Search
     if (searchQuery) {
-      result = result.filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()));
+      result = result.filter(p => 
+        p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (p.category && p.category.toLowerCase().includes(searchQuery.toLowerCase()))
+      );
     }
 
     // Sort
@@ -42,11 +49,9 @@ const Shop: React.FC = () => {
 
   if (isLoading && products.length === 0) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-white">
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-gold border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-luxury font-display text-xl uppercase tracking-widest">Loading Treasures...</p>
-        </div>
+      <div className="min-h-screen flex flex-col items-center justify-center bg-white">
+        <div className="w-10 h-10 border-2 border-gold/20 border-t-gold rounded-full animate-spin mb-4" />
+        <p className="text-[10px] uppercase tracking-[0.2em] text-gray-400 font-bold animate-pulse italic">Curating Treasures...</p>
       </div>
     );
   }
@@ -110,7 +115,7 @@ const Shop: React.FC = () => {
         </div>
 
         {/* Product Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-8 gap-y-16">
+        <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-4 md:gap-x-8 gap-y-10 md:gap-y-16">
           {filteredProducts.map(product => (
             <ProductCard 
               key={product.id} 

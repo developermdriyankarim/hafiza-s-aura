@@ -18,6 +18,8 @@ const Navbar: React.FC = () => {
 
   const navLinks = [
     { name: 'Home', path: '/' },
+    { name: 'Saree Items', path: '/shop?category=Saree' },
+    { name: 'Bangles', path: '/shop?category=Bangles' },
     { name: 'Shop', path: '/shop' },
     { name: 'Contact', path: '/contact' },
   ];
@@ -25,7 +27,8 @@ const Navbar: React.FC = () => {
   const searchResults = React.useMemo(() => {
     if (!searchQuery.trim()) return [];
     return products.filter(p => 
-      p.name.toLowerCase().includes(searchQuery.toLowerCase()) && 
+      (p.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+       (p.category && p.category.toLowerCase().includes(searchQuery.toLowerCase()))) && 
       p.status !== 'Draft'
     ).slice(0, 5);
   }, [searchQuery, products]);

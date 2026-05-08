@@ -91,6 +91,9 @@ export const supabaseService = {
         status: order.status || 'Pending',
         customer_details: order.customer,
         delivery_fee: Number(order.deliveryFee) || 0,
+        advance_amount: Number(order.advanceAmount) || 0,
+        transaction_id: order.transactionId || null,
+        payment_method: order.paymentMethod || 'Cash on Delivery',
         created_at: order.createdAt || new Date().toISOString()
       };
 

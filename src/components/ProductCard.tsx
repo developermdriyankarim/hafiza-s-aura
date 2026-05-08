@@ -31,26 +31,35 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, highlight }) => {
         {/* Overlay Actions */}
         <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors duration-500" />
         
-        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 translate-y-12 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300 flex items-center space-x-2">
+        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 translate-y-12 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 lg:group-hover:translate-y-0 lg:group-hover:opacity-100 transition-all duration-300 flex items-center space-x-2 z-20 md:translate-y-0 md:opacity-100 lg:opacity-0 lg:translate-y-12">
           <button 
-            onClick={() => addToCart(product)}
-            className="bg-white text-gold p-3 rounded-full hover:bg-gold hover:text-white transition-all shadow-lg"
+            onClick={(e) => {
+              e.preventDefault();
+              addToCart(product);
+            }}
+            className="bg-white text-gold p-3 rounded-full hover:bg-gold hover:text-white transition-all shadow-lg active:scale-95"
             title="Add to Cart"
           >
-            <ShoppingBag className="w-5 h-5" />
+            <ShoppingBag className="w-5 h-5 md:w-4 md:h-4 lg:w-5 lg:h-5" />
           </button>
           <Link 
             to={`/product/${product.id}`}
-            className="bg-white text-gray-800 p-3 rounded-full hover:bg-gold hover:text-white transition-all shadow-lg"
+            className="bg-white text-gray-800 p-3 rounded-full hover:bg-gold hover:text-white transition-all shadow-lg active:scale-95"
             title="View Details"
           >
-            <Eye className="w-5 h-5" />
+            <Eye className="w-5 h-5 md:w-4 md:h-4 lg:w-5 lg:h-5" />
           </Link>
         </div>
 
         {product.isFeatured && (
           <span className="absolute top-4 left-4 bg-white/90 backdrop-blur px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-gold border border-gold/20">
             Featured
+          </span>
+        )}
+
+        {(product.category?.toLowerCase() === 'saree' || product.category?.toLowerCase() === 'sharee') && (
+          <span className="absolute top-4 right-4 bg-rose-500 text-white px-3 py-1 text-[10px] font-bold uppercase tracking-widest shadow-lg">
+            30% Advance
           </span>
         )}
       </div>

@@ -36,6 +36,9 @@ CREATE TABLE IF NOT EXISTS public.orders (
     status TEXT DEFAULT 'Pending',
     customer_details JSONB,
     delivery_fee DECIMAL(10, 2) DEFAULT 0,
+    advance_amount DECIMAL(10, 2) DEFAULT 0,
+    transaction_id TEXT,
+    payment_method TEXT DEFAULT 'Cash on Delivery',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
