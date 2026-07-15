@@ -55,12 +55,7 @@ const Checkout: React.FC = () => {
     } else if (cart.length === 0) {
       navigate('/shop');
     }
-    
-    // Default to bKash if Saree is present as it's mandatory for advance
-    if (hasSaree) {
-      setPaymentMethod('bKash');
-    }
-  }, [currentUser, cart.length, navigate, hasSaree]);
+  }, [currentUser, cart.length, navigate]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -72,7 +67,7 @@ const Checkout: React.FC = () => {
     e.preventDefault();
     if (isSubmitting) return;
 
-    if ((hasSaree || paymentMethod === 'bKash') && !formData.transactionId) {
+    if (paymentMethod === 'bKash' && !formData.transactionId) {
       alert('Please provide the bKash Transaction ID for your payment.');
       return;
     }
@@ -101,7 +96,7 @@ const Checkout: React.FC = () => {
         items: [...cart],
         total: finalTotal,
         deliveryFee: deliveryFee,
-        advanceAmount: hasSaree ? requiredAdvance : (paymentMethod === 'bKash' ? finalTotal : 0),
+        advanceAmount: paymentMethod === 'bKash' ? finalTotal : 0,
         paymentMethod: paymentMethod,
         transactionId: formData.transactionId,
         status: 'Pending',
@@ -228,18 +223,43 @@ const Checkout: React.FC = () => {
                 <div className="pt-10">
                    <h3 className="text-xl font-display mb-6 italic">Payment Method Selection</h3>
                    
-                    {hasSaree ? (
-                         <div className="bg-white border border-rose-100 rounded-[2.5rem] mb-10 overflow-hidden shadow-2xl shadow-rose-100/50 animate-in fade-in zoom-in duration-700">
+                   <div className="grid grid-cols-1 gap-4">
+                      <label className={`flex items-center p-6 border-2 rounded-3xl cursor-pointer transition-all ${paymentMethod === 'Cash on Delivery' ? 'border-gold bg-gold/5 shadow-md scale-[1.01]' : 'border-gray-100 hover:bg-gray-50'}`}
+                              onClick={() => setPaymentMethod('Cash on Delivery')}>
+                         <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${paymentMethod === 'Cash on Delivery' ? 'border-gold bg-gold' : 'border-gray-300'}`}>
+                            {paymentMethod === 'Cash on Delivery' && <div className="w-2 h-2 bg-white rounded-full" />}
+                         </div>
+                         <div className="ml-6">
+                            <span className="block text-sm font-black uppercase tracking-widest text-gray-900">Cash on Delivery</span>
+                            <span className="block text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-0.5">Pay upon grand arrival</span>
+                         </div>
+                         <ShieldCheck className={`ml-auto w-6 h-6 ${paymentMethod === 'Cash on Delivery' ? 'text-gold' : 'text-gray-200'}`} />
+                      </label>
+                      
+                      <label className={`flex items-center p-6 border-2 rounded-3xl cursor-pointer transition-all ${paymentMethod === 'bKash' ? 'border-rose-500 bg-rose-50 shadow-md scale-[1.01]' : 'border-gray-100 hover:bg-gray-50'}`}
+                              onClick={() => setPaymentMethod('bKash')}>
+                         <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${paymentMethod === 'bKash' ? 'border-rose-500 bg-rose-500' : 'border-gray-300'}`}>
+                            {paymentMethod === 'bKash' && <div className="w-2 h-2 bg-white rounded-full" />}
+                         </div>
+                         <div className="ml-6">
+                            <span className="block text-sm font-black uppercase tracking-widest text-gray-900">bKash Payment</span>
+                            <span className="block text-[10px] text-rose-400 font-bold uppercase tracking-widest mt-0.5">Secure mobile verification</span>
+                         </div>
+                         <CheckCircle2 className={`ml-auto w-6 h-6 ${paymentMethod === 'bKash' ? 'text-rose-500' : 'text-gray-200'}`} />
+                      </label>
+                      
+                      {paymentMethod === 'bKash' && (
+                         <div className="bg-white border border-rose-100 rounded-[2.5rem] mt-4 overflow-hidden shadow-2xl shadow-rose-100/50 animate-in fade-in zoom-in duration-700">
                             {/* Dominant QR Section */}
-                            <div className="bg-gradient-to-b from-[#FFF5F8] to-white p-8 md:p-14 text-center relative overflow-hidden">
+                            <div className="bg-gradient-to-b from-[#FFF5F8] to-white p-6 md:p-10 text-center relative overflow-hidden">
                                <div className="absolute top-0 right-0 p-8 opacity-5">
-                                  <QrCode className="w-32 h-32 text-[#E2136E]" />
+                                  <QrCode className="w-24 h-24 text-[#E2136E]" />
                                </div>
                                
-                               <div className="mb-10 relative inline-block">
+                               <div className="mb-8 relative inline-block">
                                   <div className="absolute inset-0 bg-[#E2136E]/5 blur-3xl rounded-full scale-150 animate-pulse" />
-                                  <div className="relative bg-white p-4 md:p-6 rounded-[2.5rem] md:rounded-[3.5rem] shadow-[0_20px_60px_rgba(226,19,110,0.18)] border border-white">
-                                     <div className="bg-gray-50 p-6 md:p-16 rounded-[2rem] md:rounded-[3rem] border border-gray-100 flex items-center justify-center w-full max-w-[320px] md:max-w-[460px]">
+                                  <div className="relative bg-white p-4 rounded-[2rem] shadow-[0_20px_50px_rgba(226,19,110,0.15)] border border-white">
+                                     <div className="bg-gray-50 p-6 md:p-12 rounded-[1.5rem] border border-gray-100 flex items-center justify-center w-full max-w-[280px] md:max-w-[380px]">
                                         <img 
                                            src="https://nrfvzhwsdhtxhtzevwne.supabase.co/storage/v1/object/public/product%20photo/WhatsApp%20Image%202026-05-08%20at%204.48.19%20PM.jpeg" 
                                            alt="bKash QR" 
@@ -257,172 +277,54 @@ const Checkout: React.FC = () => {
                                   
                                   <div className="pt-2">
                                      <span className="bg-[#E2136E]/10 text-[#E2136E] text-[10px] font-black uppercase tracking-widest px-4 py-2 rounded-full border border-[#E2136E]/20 inline-flex items-center gap-2 shadow-sm italic">
-                                        <span className="w-1.5 h-1.5 bg-[#E2136E] rounded-full animate-pulse" />
-                                        30% Advance Required for Sarees
+                                        Full Payment via bKash
                                      </span>
                                   </div>
                                </div>
                             </div>
 
-                            <div className="p-6 md:p-10 space-y-8 bg-white/50 backdrop-blur-md">
+                            <div className="p-6 md:p-8 space-y-6 bg-white/50 backdrop-blur-md text-gray-900 font-bold italic uppercase tracking-widest">
                                <div className="grid grid-cols-2 gap-4">
-                                  <div className="bg-[#FFF1F6] p-4 md:p-6 rounded-2xl md:rounded-3xl border border-[#E2136E]/10 flex flex-col justify-center">
-                                     <p className="text-[8px] md:text-[10px] font-black uppercase tracking-widest text-[#E2136E]/60 mb-2">Order Value</p>
-                                     <p className="text-lg md:text-2xl font-display text-[#E2136E]/40 line-through decoration-[#E2136E]/20">৳{finalTotal.toLocaleString()}</p>
+                                  <div className="bg-[#FFF1F6] p-4 rounded-2xl border border-[#E2136E]/10 flex flex-col justify-center">
+                                     <p className="text-[8px] font-black uppercase tracking-widest text-[#E2136E]/60 mb-1">Total Value</p>
+                                     <p className="text-lg font-display text-[#E2136E]/40 line-through decoration-[#E2136E]/10">৳{finalTotal.toLocaleString()}</p>
                                   </div>
-                                  <div className="bg-[#E2136E] p-4 md:p-6 rounded-2xl md:rounded-3xl text-white shadow-xl shadow-[#E2136E]/20">
-                                     <p className="text-[8px] md:text-[10px] font-black uppercase tracking-widest text-white/70 mb-2">Payable Advance</p>
-                                     <div className="flex items-baseline gap-1">
-                                        <p className="text-xl md:text-3xl font-display">৳{requiredAdvance.toLocaleString()}</p>
-                                        <span className="text-[7px] md:text-[10px] font-black opacity-90 uppercase tracking-tighter">Verified</span>
-                                     </div>
+                                  <div className="bg-[#E2136E] p-4 rounded-2xl text-white shadow-xl shadow-[#E2136E]/20">
+                                     <p className="text-[8px] font-black uppercase tracking-widest text-white/70 mb-1">Payable Amount</p>
+                                     <p className="text-xl font-display">৳{finalTotal.toLocaleString()}</p>
                                   </div>
                                </div>
 
-                               <div className="pt-2">
-                                  <div className="relative group overflow-hidden rounded-2xl md:rounded-3xl border border-gray-100 transition-all focus-within:border-[#E2136E]/20">
-                                     <label className="text-[8px] uppercase tracking-[0.3em] font-black text-gray-300 absolute top-3 left-0 right-0 z-10 text-center pointer-events-none">Transaction ID</label>
-                                     <input 
-                                        required
-                                        type="text" 
-                                        name="transactionId"
-                                        value={formData.transactionId}
-                                        onChange={handleInputChange}
-                                        placeholder="PASTE ID HERE"
-                                        className="w-full bg-gray-50/50 pt-9 pb-3 px-6 focus:bg-white focus:ring-0 transition-all font-mono text-base md:text-xl tracking-[0.4em] text-gray-950 text-center uppercase"
-                                     />
-                                  </div>
-                                  <div className="flex items-center justify-center gap-3 mt-5 px-2">
-                                     <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_rgba(52,211,153,0.5)]" />
-                                     <p className="text-[9px] font-black uppercase tracking-[0.15em] text-[#E2136E]/50">
-                                        Heritage Instant verification active
-                                     </p>
-                                  </div>
-                               </div>
-
-                               <div className="pt-6 border-t border-gray-50 flex items-center justify-around text-center">
-                                  <div className="space-y-1">
-                                     <p className="text-[8px] font-black uppercase text-gray-300 tracking-widest">Status</p>
-                                     <p className="text-xs font-bold text-[#E2136E]">Awaiting Pay</p>
-                                  </div>
-                                  <div className="w-px h-8 bg-gray-100" />
-                                  <div className="space-y-1">
-                                     <p className="text-[8px] font-black uppercase text-gray-300 tracking-widest">Processing</p>
-                                     <p className="text-xs font-bold text-gray-600">~2m Auto</p>
-                                  </div>
-                                  <div className="w-px h-8 bg-gray-100" />
-                                  <div className="space-y-1">
-                                     <p className="text-[8px] font-black uppercase text-gray-300 tracking-widest">Security</p>
-                                     <p className="text-xs font-bold text-gray-600">Encrypted</p>
-                                  </div>
+                               <div className="relative group overflow-hidden rounded-2xl md:rounded-3xl border border-gray-100 transition-all focus-within:border-[#E2136E]/20">
+                                  <label className="text-[8px] uppercase tracking-[0.3em] font-black text-gray-300 absolute top-3 left-0 right-0 z-10 text-center pointer-events-none">Transaction ID</label>
+                                  <input 
+                                     required
+                                     type="text" 
+                                     name="transactionId"
+                                     value={formData.transactionId}
+                                     onChange={handleInputChange}
+                                     placeholder="PASTE ID HERE"
+                                     className="w-full bg-gray-50/50 pt-9 pb-3 px-6 focus:bg-white focus:ring-0 transition-all font-mono text-base md:text-xl tracking-[0.4em] text-gray-950 text-center uppercase"
+                                  />
+                                </div>
+                               <div className="flex items-center justify-center gap-3 px-2">
+                                  <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_rgba(52,211,153,0.5)]" />
+                                  <p className="text-[9px] font-black uppercase tracking-[0.15em] text-[#E2136E]/50">
+                                     Auto verification active
+                                  </p>
                                </div>
                             </div>
                          </div>
-
-                    ) : (
-                       <div className="grid grid-cols-1 gap-4">
-                          <label className={`flex items-center p-6 border-2 rounded-3xl cursor-pointer transition-all ${paymentMethod === 'Cash on Delivery' ? 'border-gold bg-gold/5 shadow-md scale-[1.01]' : 'border-gray-100 hover:bg-gray-50'}`}
-                                  onClick={() => setPaymentMethod('Cash on Delivery')}>
-                             <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${paymentMethod === 'Cash on Delivery' ? 'border-gold bg-gold' : 'border-gray-300'}`}>
-                                {paymentMethod === 'Cash on Delivery' && <div className="w-2 h-2 bg-white rounded-full" />}
-                             </div>
-                             <div className="ml-6">
-                                <span className="block text-sm font-black uppercase tracking-widest text-gray-900">Cash on Delivery</span>
-                                <span className="block text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-0.5">Pay upon grand arrival</span>
-                             </div>
-                             <ShieldCheck className={`ml-auto w-6 h-6 ${paymentMethod === 'Cash on Delivery' ? 'text-gold' : 'text-gray-200'}`} />
-                          </label>
-                          
-                          <label className={`flex items-center p-6 border-2 rounded-3xl cursor-pointer transition-all ${paymentMethod === 'bKash' ? 'border-rose-500 bg-rose-50 shadow-md scale-[1.01]' : 'border-gray-100 hover:bg-gray-50'}`}
-                                  onClick={() => setPaymentMethod('bKash')}>
-                             <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${paymentMethod === 'bKash' ? 'border-rose-500 bg-rose-500' : 'border-gray-300'}`}>
-                                {paymentMethod === 'bKash' && <div className="w-2 h-2 bg-white rounded-full" />}
-                             </div>
-                             <div className="ml-6">
-                                <span className="block text-sm font-black uppercase tracking-widest text-gray-900">bKash Payment</span>
-                                <span className="block text-[10px] text-rose-400 font-bold uppercase tracking-widest mt-0.5">Secure mobile verification</span>
-                             </div>
-                             <CheckCircle2 className={`ml-auto w-6 h-6 ${paymentMethod === 'bKash' ? 'text-rose-500' : 'text-gray-200'}`} />
-                          </label>
-                          
-                          {paymentMethod === 'bKash' && (
-                             <div className="bg-white border border-rose-100 rounded-[2.5rem] mt-4 overflow-hidden shadow-2xl shadow-rose-100/50 animate-in fade-in zoom-in duration-700">
-                                {/* Dominant QR Section */}
-                                <div className="bg-gradient-to-b from-[#FFF5F8] to-white p-6 md:p-10 text-center relative overflow-hidden">
-                                   <div className="absolute top-0 right-0 p-8 opacity-5">
-                                      <QrCode className="w-24 h-24 text-[#E2136E]" />
-                                   </div>
-                                   
-                                   <div className="mb-8 relative inline-block">
-                                      <div className="absolute inset-0 bg-[#E2136E]/5 blur-3xl rounded-full scale-150 animate-pulse" />
-                                      <div className="relative bg-white p-4 rounded-[2rem] shadow-[0_20px_50px_rgba(226,19,110,0.15)] border border-white">
-                                         <div className="bg-gray-50 p-6 md:p-12 rounded-[1.5rem] border border-gray-100 flex items-center justify-center w-full max-w-[280px] md:max-w-[380px]">
-                                            <img 
-                                               src="https://nrfvzhwsdhtxhtzevwne.supabase.co/storage/v1/object/public/product%20photo/WhatsApp%20Image%202026-05-08%20at%204.48.19%20PM.jpeg" 
-                                               alt="bKash QR" 
-                                               className="w-full h-auto object-contain mx-auto transition-transform hover:scale-105 duration-500"
-                                               referrerPolicy="no-referrer"
-                                            />
-                                         </div>
-                                      </div>
-                                   </div>
-
-                                   <div className="space-y-4">
-                                      <p className="text-[11px] font-medium text-gray-500 max-w-[280px] mx-auto leading-relaxed">
-                                         সেন্ট মানি করতে বিকাশ অ্যাপ দিয়ে QR কোডটি স্ক্যান করুন
-                                      </p>
-                                      
-                                      <div className="pt-2">
-                                         <span className="bg-[#E2136E]/10 text-[#E2136E] text-[10px] font-black uppercase tracking-widest px-4 py-2 rounded-full border border-[#E2136E]/20 inline-flex items-center gap-2 shadow-sm italic">
-                                            Full Payment via bKash
-                                         </span>
-                                      </div>
-                                   </div>
-                                </div>
-
-                                <div className="p-6 md:p-8 space-y-6 bg-white/50 backdrop-blur-md text-gray-900 font-bold italic uppercase tracking-widest">
-                                   <div className="grid grid-cols-2 gap-4">
-                                      <div className="bg-[#FFF1F6] p-4 rounded-2xl border border-[#E2136E]/10 flex flex-col justify-center">
-                                         <p className="text-[8px] font-black uppercase tracking-widest text-[#E2136E]/60 mb-1">Total Value</p>
-                                         <p className="text-lg font-display text-[#E2136E]/40 line-through decoration-[#E2136E]/10">৳{finalTotal.toLocaleString()}</p>
-                                      </div>
-                                      <div className="bg-[#E2136E] p-4 rounded-2xl text-white shadow-xl shadow-[#E2136E]/20">
-                                         <p className="text-[8px] font-black uppercase tracking-widest text-white/70 mb-1">Payable Amount</p>
-                                         <p className="text-xl font-display">৳{finalTotal.toLocaleString()}</p>
-                                      </div>
-                                   </div>
-
-                                   <div className="relative group overflow-hidden rounded-2xl md:rounded-3xl border border-gray-100 transition-all focus-within:border-[#E2136E]/20">
-                                      <label className="text-[8px] uppercase tracking-[0.3em] font-black text-gray-300 absolute top-3 left-0 right-0 z-10 text-center pointer-events-none">Transaction ID</label>
-                                      <input 
-                                         required
-                                         type="text" 
-                                         name="transactionId"
-                                         value={formData.transactionId}
-                                         onChange={handleInputChange}
-                                         placeholder="PASTE ID HERE"
-                                         className="w-full bg-gray-50/50 pt-9 pb-3 px-6 focus:bg-white focus:ring-0 transition-all font-mono text-base md:text-xl tracking-[0.4em] text-gray-950 text-center uppercase"
-                                      />
-                                   </div>
-                                   <div className="flex items-center justify-center gap-3 px-2">
-                                      <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_rgba(52,211,153,0.5)]" />
-                                      <p className="text-[9px] font-black uppercase tracking-[0.15em] text-[#E2136E]/50">
-                                         Auto verification active
-                                      </p>
-                                   </div>
-                                </div>
-                             </div>
-                          )}
-                       </div>
-                    )}
+                      )}
+                   </div>
                 </div>
 
                 <button 
                   type="submit"
                   disabled={isSubmitting}
-                  className={`w-full text-white px-10 py-5 rounded-full text-sm font-bold uppercase tracking-widest transition-all mt-10 shadow-xl disabled:opacity-50 disabled:cursor-wait ${hasSaree || paymentMethod === 'bKash' ? 'bg-rose-600 hover:bg-rose-700' : 'bg-gray-900 hover:bg-gold'}`}
+                  className={`w-full text-white px-10 py-5 rounded-full text-sm font-bold uppercase tracking-widest transition-all mt-10 shadow-xl disabled:opacity-50 disabled:cursor-wait ${paymentMethod === 'bKash' ? 'bg-rose-600 hover:bg-rose-700' : 'bg-gray-900 hover:bg-gold'}`}
                 >
-                  {isSubmitting ? 'Processing Order...' : hasSaree ? 'Confirm & Process Advance' : 'Place Aura Order'}
+                  {isSubmitting ? 'Processing Order...' : 'Place Aura Order'}
                 </button>
              </form>
           </div>
@@ -465,30 +367,11 @@ const Checkout: React.FC = () => {
                       <span>Shipping ({formData.location})</span>
                       <span className="text-gold font-bold">৳{deliveryFee.toLocaleString()}</span>
                    </div>
-                   
-                   {hasSaree && (
-                       <div className="pt-3 pb-3 px-4 bg-rose-50 rounded-xl border border-rose-100 flex justify-between items-center">
-                           <div className="flex items-center gap-2">
-                               <span className="p-1 bg-rose-500 text-white rounded shadow-sm">
-                                   <ShieldCheck className="w-3 h-3" />
-                               </span>
-                               <span className="text-[10px] font-bold uppercase tracking-widest text-rose-900">30% Advance Payment</span>
-                           </div>
-                           <span className="text-sm font-bold text-rose-600">৳{requiredAdvance.toLocaleString()}</span>
-                       </div>
-                   )}
 
                    <div className="pt-6 border-t border-gray-50 flex justify-between items-end">
                       <span className="text-[10px] uppercase tracking-widest font-black text-gray-900">Total Value</span>
                       <span className="text-2xl font-display text-gold">৳{(Number(finalTotal) || 0).toLocaleString()}</span>
                    </div>
-                   
-                   {hasSaree && (
-                       <div className="flex justify-between text-xs text-gray-400 pt-2 italic">
-                           <span>Rest on Delivery</span>
-                           <span>৳{(finalTotal - requiredAdvance).toLocaleString()}</span>
-                       </div>
-                   )}
                 </div>
              </div>
 
